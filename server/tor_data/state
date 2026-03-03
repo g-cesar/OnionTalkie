@@ -1,0 +1,108 @@
+# Tor state file last generated on 2026-03-03 15:05:31 local time
+# Other times below are in UTC
+# You *do not* need to edit this file.
+
+CircuitBuildTimeBin 145 2
+CircuitBuildTimeBin 155 5
+CircuitBuildTimeBin 165 15
+CircuitBuildTimeBin 175 15
+CircuitBuildTimeBin 185 20
+CircuitBuildTimeBin 195 30
+CircuitBuildTimeBin 205 32
+CircuitBuildTimeBin 215 42
+CircuitBuildTimeBin 225 55
+CircuitBuildTimeBin 235 37
+CircuitBuildTimeBin 245 34
+CircuitBuildTimeBin 255 35
+CircuitBuildTimeBin 265 46
+CircuitBuildTimeBin 275 48
+CircuitBuildTimeBin 285 28
+CircuitBuildTimeBin 295 36
+CircuitBuildTimeBin 305 47
+CircuitBuildTimeBin 315 38
+CircuitBuildTimeBin 325 32
+CircuitBuildTimeBin 335 20
+CircuitBuildTimeBin 345 35
+CircuitBuildTimeBin 355 32
+CircuitBuildTimeBin 365 22
+CircuitBuildTimeBin 375 26
+CircuitBuildTimeBin 385 23
+CircuitBuildTimeBin 395 25
+CircuitBuildTimeBin 405 18
+CircuitBuildTimeBin 415 11
+CircuitBuildTimeBin 425 9
+CircuitBuildTimeBin 435 11
+CircuitBuildTimeBin 445 9
+CircuitBuildTimeBin 455 15
+CircuitBuildTimeBin 465 8
+CircuitBuildTimeBin 475 12
+CircuitBuildTimeBin 485 4
+CircuitBuildTimeBin 495 7
+CircuitBuildTimeBin 505 10
+CircuitBuildTimeBin 515 6
+CircuitBuildTimeBin 525 4
+CircuitBuildTimeBin 535 6
+CircuitBuildTimeBin 545 5
+CircuitBuildTimeBin 555 10
+CircuitBuildTimeBin 565 2
+CircuitBuildTimeBin 575 3
+CircuitBuildTimeBin 585 3
+CircuitBuildTimeBin 595 5
+CircuitBuildTimeBin 605 4
+CircuitBuildTimeBin 615 1
+CircuitBuildTimeBin 625 2
+CircuitBuildTimeBin 635 2
+CircuitBuildTimeBin 645 2
+CircuitBuildTimeBin 655 5
+CircuitBuildTimeBin 665 2
+CircuitBuildTimeBin 675 4
+CircuitBuildTimeBin 685 5
+CircuitBuildTimeBin 695 2
+CircuitBuildTimeBin 715 1
+CircuitBuildTimeBin 725 3
+CircuitBuildTimeBin 735 1
+CircuitBuildTimeBin 745 1
+CircuitBuildTimeBin 755 2
+CircuitBuildTimeBin 765 1
+CircuitBuildTimeBin 775 1
+CircuitBuildTimeBin 785 1
+CircuitBuildTimeBin 805 1
+CircuitBuildTimeBin 825 1
+CircuitBuildTimeBin 875 1
+CircuitBuildTimeBin 975 1
+CircuitBuildTimeBin 985 1
+CircuitBuildTimeBin 995 1
+CircuitBuildTimeBin 1025 1
+CircuitBuildTimeBin 1045 2
+CircuitBuildTimeBin 1075 1
+CircuitBuildTimeBin 1105 1
+CircuitBuildTimeBin 1215 1
+CircuitBuildTimeBin 1335 1
+CircuitBuildTimeBin 1505 1
+CircuitBuildTimeBin 2035 1
+CircuitBuildTimeBin 11445 1
+CircuitBuildAbandonedCount 6
+Dormant 0
+Guard in=default rsa_id=3A4E6203B16D291A7E2A2E262B062DAB70E538E1 nickname=Intrepid sampled_on=2026-02-20T03:08:27 sampled_idx=0 sampled_by=0.4.8.14 listed=1 confirmed_on=2026-02-24T02:38:49 confirmed_idx=1 pb_use_attempts=58.500000 pb_use_successes=58.500000 pb_circ_attempts=194.000000 pb_circ_successes=191.750000 pb_successful_circuits_closed=190.500000 pb_collapsed_circuits=1.250000 pb_timeouts=4.250000
+Guard in=default rsa_id=B9B1EDF634226DE80AB753AF5ECFB4EF02936F33 nickname=bute sampled_on=2026-03-02T05:36:33 sampled_idx=1 sampled_by=0.4.8.14 listed=1 confirmed_on=2026-03-01T15:10:30 confirmed_idx=0 pb_use_attempts=74.312500 pb_use_successes=74.312500 pb_circ_attempts=210.250000 pb_circ_successes=207.750000 pb_successful_circuits_closed=200.500000 pb_collapsed_circuits=7.250000 pb_timeouts=1.750000
+Guard in=default rsa_id=C4BE8F8FA6DAB7F979A793DFA2214CF0F2208ED2 nickname=Quetzalcoatl sampled_on=2026-02-26T17:55:41 sampled_idx=2 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=ECA08EAF2D28CA54BD487EE464182F5895DE1688 nickname=vivaukraine sampled_on=2026-02-28T22:51:18 sampled_idx=3 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=22D2314BC5146890A8E5C19C884D96C0CBFEAA24 nickname=Pegase sampled_on=2026-02-21T04:15:54 sampled_idx=4 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=5650505A4FF129156AC0165BAE6B8F5DC463EBFD nickname=Digraph sampled_on=2026-02-25T17:20:29 sampled_idx=5 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=88C5273682DFC0E0788CD472543F6DCE9D879B4B nickname=GhostHopShield sampled_on=2026-02-21T03:16:06 sampled_idx=6 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=0DE135A4D0ECCB5D57F8B71BF8E22958FC4146A7 nickname=NTH45R1 sampled_on=2026-02-26T18:36:14 sampled_idx=7 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=6520532F204357136DE139A29459A27A498AC13D nickname=Starfleet sampled_on=2026-02-22T02:43:12 sampled_idx=8 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=FD3517DFFC281F1430EBB6A62520595A8FF7B378 nickname=SrsTubesRelay sampled_on=2026-02-28T13:52:36 sampled_idx=9 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=11AA8059BB9A0EC58412E91723F81FFD49C60E7E nickname=BSDrelay09 sampled_on=2026-02-24T18:25:43 sampled_idx=10 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=E7B3B2019FD57214F2BEA727190DE63AED868503 nickname=FiveEyesPlus sampled_on=2026-03-01T20:21:11 sampled_idx=11 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=18671DE5092C67883BFB2450C3267B92618BEC66 nickname=ForPrivacyNET sampled_on=2026-02-28T05:43:08 sampled_idx=12 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=36BF4C04D566C50BDFBF891C15D1DF0341C93685 nickname=Sorjonen sampled_on=2026-02-25T14:06:40 sampled_idx=13 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=AF0AACE7F1341BF1985F2A13F2257ACE08FDF125 nickname=quandorondo sampled_on=2026-02-19T03:17:51 sampled_idx=14 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=4CF204F66452C89712B9CF513A213C1F03D8F706 nickname=Indigold sampled_on=2026-02-23T16:12:30 sampled_idx=15 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=88C58633C9537A2E0F93A5EC09BDF40FC3247715 nickname=Determination sampled_on=2026-02-23T09:57:20 sampled_idx=16 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=7C781344302E21A6A954D7D794255CFD294D50EE nickname=666Sirocco sampled_on=2026-02-27T10:08:37 sampled_idx=17 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=8C481484574A77A1165C8A1C646DA016CE3E665B nickname=Unnamed sampled_on=2026-02-23T12:52:39 sampled_idx=18 sampled_by=0.4.8.14 listed=1
+Guard in=default rsa_id=123D54E7A576C90E3457996F7B20C2496ED09C2D nickname=zgato sampled_on=2026-02-24T12:04:24 sampled_idx=19 sampled_by=0.4.8.14 listed=1
+LastWritten 2026-03-03 14:05:31
+TorVersion Tor 0.4.8.14
+TotalBuildTimes 1000

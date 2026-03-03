@@ -1,0 +1,6 @@
+SocksPort 9050
+ControlPort 9051
+DataDirectory /Users/guido-cesarano/Documents/VS-Code-Workspace/TerminalPhone/./server/tor_data
+HiddenServiceDir /Users/guido-cesarano/Documents/VS-Code-Workspace/TerminalPhone/./server/tor_data/hidden_service
+HiddenServicePort 7777 127.0.0.1:7777
+Log notice stdout
