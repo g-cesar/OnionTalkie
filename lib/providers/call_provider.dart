@@ -93,7 +93,6 @@ class CallNotifier extends StateNotifier<CallState> {
 
     try {
       final settings = _ref.read(settingsProvider);
-      _setupHmac(settings);
 
       // Tor circuits are inherently unreliable — retry up to 3 times with
       // increasing back-off to dramatically improve connection success rate.
@@ -155,6 +154,13 @@ class CallNotifier extends StateNotifier<CallState> {
 
     _connectionService.sendCipher(settings.cipher);
     _encryptionService.setCipher(settings.cipher);
+
+    // Enable HMAC *after* the handshake messages (ID/CIPHER) have been
+    // sent in plain text.  The receiver does not have the HMAC key yet
+    // (it is loaded only after the peer's ID is resolved), so wrapping
+    // the initial messages would cause an HMAC verification failure on
+    // the remote side.
+    _setupHmac(settings);
 
     if (!pakeActive) {
       state = state
@@ -382,9 +388,12 @@ class CallNotifier extends StateNotifier<CallState> {
       _connectionService.sendId(torStatus.onionAddress!);
     }
     final settings = _ref.read(settingsProvider);
-    _setupHmac(settings);
     _connectionService.sendCipher(settings.cipher);
     _encryptionService.setCipher(settings.cipher);
+
+    // Enable HMAC *after* sending handshake messages (ID/CIPHER) in
+    // plain text — symmetric with the caller side.
+    _setupHmac(settings);
 
     final isPake = _spake2 != null && _spake2!.isComplete;
 
