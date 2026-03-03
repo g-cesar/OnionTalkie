@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../core/theme/app_theme.dart';
 import '../models/tor_status.dart';
@@ -12,7 +13,7 @@ class StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final (icon, label, accentColor, description) = _statusInfo();
+    final (icon, label, accentColor, description) = _statusInfo(context);
 
     return Container(
       decoration: BoxDecoration(
@@ -106,51 +107,51 @@ class StatusCard extends StatelessWidget {
     return Icon(icon, color: color, size: 26);
   }
 
-  (IconData, String, Color, String) _statusInfo() {
+  (IconData, String, Color, String) _statusInfo(BuildContext context) {
     switch (torStatus.state) {
       case TorConnectionState.stopped:
         return (
           Icons.shield_outlined,
-          'Tor non attivo',
+          S.of(context).torNotActive,
           AppColors.textSecondary,
-          'Avvia Tor per poter effettuare o ricevere chiamate cifrate.',
+          S.of(context).torNotActiveDesc,
         );
       case TorConnectionState.notInstalled:
         return (
           Icons.download,
-          'Tor non installato',
+          S.of(context).torNotInstalledBanner,
           AppColors.coral,
-          'Installa il client Tor per utilizzare OnionTalkie.',
+          S.of(context).torNotInstalledDesc,
         );
       case TorConnectionState.starting:
         return (
           Icons.hourglass_top,
-          'Avvio in corso...',
+          S.of(context).startingUp,
           AppColors.yellow,
-          'Inizializzazione del servizio Tor.',
+          S.of(context).startingUpDesc,
         );
       case TorConnectionState.bootstrapping:
         return (
           Icons.sync,
-          'Connessione a Tor...',
+          S.of(context).connectingToTor,
           AppColors.yellow,
-          'Bootstrap in corso — costruzione del circuito.',
+          S.of(context).connectingToTorDesc,
         );
       case TorConnectionState.connected:
         return (
           Icons.shield,
-          'Tor connesso',
+          S.of(context).torConnectedBanner,
           AppColors.mint,
           torStatus.onionAddress != null
               ? '${torStatus.onionAddress!.substring(0, 16)}...onion'
-              : 'Pronto per chiamate cifrate.',
+              : S.of(context).readyForCalls,
         );
       case TorConnectionState.error:
         return (
           Icons.error_outline,
-          'Errore Tor',
+          S.of(context).torErrorBanner,
           AppColors.coral,
-          torStatus.errorMessage ?? 'Si è verificato un errore.',
+          torStatus.errorMessage ?? S.of(context).torErrorDefault,
         );
     }
   }

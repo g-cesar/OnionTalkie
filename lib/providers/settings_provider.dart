@@ -72,6 +72,10 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> setRelayServerUrl(String url) async {
     await updateSettings(state.copyWith(relayServerUrl: url));
   }
+
+  Future<void> setLocale(String locale) async {
+    await updateSettings(state.copyWith(locale: locale));
+  }
 }
 
 final settingsProvider =

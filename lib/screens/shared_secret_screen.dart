@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
@@ -49,7 +50,7 @@ class _SharedSecretScreenState extends ConsumerState<SharedSecretScreen> {
     final secret = _secretController.text.trim();
     if (secret.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Inserisci un segreto condiviso')),
+        SnackBar(content: Text(S.of(context).enterSharedSecret)),
       );
       return;
     }
@@ -72,7 +73,7 @@ class _SharedSecretScreenState extends ConsumerState<SharedSecretScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Segreto condiviso salvato')),
+        SnackBar(content: Text(S.of(context).sharedSecretSaved)),
       );
       Navigator.pop(context);
     }
@@ -82,19 +83,18 @@ class _SharedSecretScreenState extends ConsumerState<SharedSecretScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Elimina segreto'),
-        content: const Text(
-          'Sei sicuro di voler eliminare il segreto condiviso? '
-          'Non potrai effettuare chiamate cifrate senza un segreto.',
+        title: Text(S.of(context).deleteSecret),
+        content: Text(
+          S.of(context).deleteSecretConfirm,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annulla'),
+            child: Text(S.of(context).cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Elimina'),
+            child: Text(S.of(context).delete),
           ),
         ],
       ),
@@ -107,7 +107,7 @@ class _SharedSecretScreenState extends ConsumerState<SharedSecretScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Segreto eliminato')),
+          SnackBar(content: Text(S.of(context).secretDeleted)),
         );
         Navigator.pop(context);
       }
@@ -126,7 +126,7 @@ class _SharedSecretScreenState extends ConsumerState<SharedSecretScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Segreto Condiviso'),
+        title: Text(S.of(context).sharedSecretTitle),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -151,13 +151,13 @@ class _SharedSecretScreenState extends ConsumerState<SharedSecretScreen> {
                   children: [
                     Icon(Icons.check_circle, color: theme.colorScheme.primary),
                     const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text('Un segreto condiviso è già configurato'),
+                    Expanded(
+                      child: Text(S.of(context).secretAlreadyConfigured),
                     ),
                     TextButton(
                       onPressed: _deleteSecret,
                       child: Text(
-                        'Elimina',
+                        S.of(context).delete,
                         style: TextStyle(color: theme.colorScheme.error),
                       ),
                     ),
@@ -169,7 +169,7 @@ class _SharedSecretScreenState extends ConsumerState<SharedSecretScreen> {
 
             // Secret input
             Text(
-              _hasExistingSecret ? 'Aggiorna segreto' : 'Nuovo segreto',
+              _hasExistingSecret ? S.of(context).updateSecret : S.of(context).newSecret,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -179,7 +179,7 @@ class _SharedSecretScreenState extends ConsumerState<SharedSecretScreen> {
               controller: _secretController,
               obscureText: _obscureSecret,
               decoration: InputDecoration(
-                labelText: 'Segreto condiviso',
+                labelText: S.of(context).sharedSecretStatus,
                 prefixIcon: const Icon(Icons.key),
                 suffixIcon: IconButton(
                   icon: Icon(
@@ -194,9 +194,9 @@ class _SharedSecretScreenState extends ConsumerState<SharedSecretScreen> {
 
             // Passphrase option
             SwitchListTile(
-              title: const Text('Proteggi con passphrase'),
-              subtitle: const Text(
-                'Cifra il segreto a riposo con AES-256-CBC',
+              title: Text(S.of(context).protectWithPassphrase),
+              subtitle: Text(
+                S.of(context).protectWithPassphraseSubtitle,
               ),
               value: _usePassphrase,
               onChanged: (value) => setState(() => _usePassphrase = value),
@@ -208,7 +208,7 @@ class _SharedSecretScreenState extends ConsumerState<SharedSecretScreen> {
                 controller: _passphraseController,
                 obscureText: _obscurePassphrase,
                 decoration: InputDecoration(
-                  labelText: 'Passphrase',
+                  labelText: S.of(context).passphrase,
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -228,7 +228,7 @@ class _SharedSecretScreenState extends ConsumerState<SharedSecretScreen> {
             FilledButton.icon(
               onPressed: _saveSecret,
               icon: const Icon(Icons.save),
-              label: const Text('Salva segreto'),
+              label: Text(S.of(context).saveSecret),
             ),
           ],
         ),
@@ -245,12 +245,8 @@ class _SharedSecretScreenState extends ConsumerState<SharedSecretScreen> {
     final color = isPake ? AppColors.mint : AppColors.yellow;
     final icon = isPake ? Icons.handshake : Icons.info_outline;
     final text = isPake
-        ? 'Modalità PAKE (SPAKE2) attiva. La passphrase NON viene mai trasmessa — '
-          'viene usata per derivare una chiave di sessione unica ad ogni chiamata '
-          'tramite scambio zero-knowledge.'
-        : 'Entrambe le parti devono usare lo stesso segreto condiviso. '
-          'Scambiate il segreto tramite un canale sicuro (di persona, '
-          'messaggistica cifrata, ecc.).';
+        ? S.of(context).pakeExplanation
+        : S.of(context).secretExchangeHint;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -270,7 +266,7 @@ class _SharedSecretScreenState extends ConsumerState<SharedSecretScreen> {
               children: [
                 if (isPake) ...[
                   Text(
-                    'SPAKE2 — Zero-Knowledge',
+                    S.of(context).spake2Title,
                     style: theme.textTheme.titleSmall?.copyWith(
                       color: color,
                       fontWeight: FontWeight.w700,

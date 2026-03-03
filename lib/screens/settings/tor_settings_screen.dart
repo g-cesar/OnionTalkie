@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/settings_provider.dart';
@@ -15,7 +16,7 @@ class TorSettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Impostazioni Tor'),
+        title: Text(S.of(context).torSettingsTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -23,10 +24,9 @@ class TorSettingsScreen extends ConsumerWidget {
           // Snowflake Bridge
           SwitchListTile(
             secondary: const Icon(Icons.ac_unit),
-            title: const Text('Snowflake Bridge'),
-            subtitle: const Text(
-              'Usa proxy WebRTC Snowflake per aggirare la censura. '
-              'La connessione sarà più lenta.',
+            title: Text(S.of(context).snowflakeBridge),
+            subtitle: Text(
+              S.of(context).snowflakeBridgeSubtitle,
             ),
             value: settings.snowflakeEnabled,
             onChanged: (value) {
@@ -43,10 +43,9 @@ class TorSettingsScreen extends ConsumerWidget {
           // Show Circuit Path
           SwitchListTile(
             secondary: const Icon(Icons.route),
-            title: const Text('Mostra percorso circuito'),
-            subtitle: const Text(
-              'Visualizza relay, nomi e paesi del circuito Tor '
-              'nella schermata home e durante le chiamate.',
+            title: Text(S.of(context).showCircuitPath),
+            subtitle: Text(
+              S.of(context).showCircuitPathSubtitle,
             ),
             value: settings.showCircuitPath,
             onChanged: (value) {
@@ -59,9 +58,9 @@ class TorSettingsScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             ListTile(
               leading: const Icon(Icons.timer_outlined),
-              title: const Text('Intervallo aggiornamento'),
+              title: Text(S.of(context).refreshInterval),
               subtitle: Text(
-                'Il circuito si aggiorna ogni ${settings.circuitRefreshSeconds} secondi',
+                S.of(context).circuitRefreshLabel(settings.circuitRefreshSeconds),
               ),
               trailing: DropdownButton<int>(
                 value: settings.circuitRefreshSeconds,
@@ -90,7 +89,7 @@ class TorSettingsScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Escludi paesi',
+              S.of(context).excludeCountries,
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -100,8 +99,7 @@ class TorSettingsScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Escludi paesi specifici dai circuiti Tor. '
-              'Usa ExcludeNodes con StrictNodes nel torrc.',
+              S.of(context).excludeCountriesHint,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -138,7 +136,7 @@ class TorSettingsScreen extends ConsumerWidget {
                   settings.excludeNodes,
                 ),
                 ActionChip(
-                  label: const Text('Nessuno'),
+                  label: Text(S.of(context).none),
                   onPressed: () {
                     ref.read(settingsProvider.notifier).setExcludeNodes('');
                   },
@@ -154,10 +152,10 @@ class TorSettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextFormField(
               initialValue: settings.excludeNodes,
-              decoration: const InputDecoration(
-                labelText: 'Codici paese personalizzati',
+              decoration: InputDecoration(
+                labelText: S.of(context).customCountryCodes,
                 hintText: '{US},{GB},{DE}',
-                helperText: 'Formato: {XX},{YY} — Codici ISO 3166-1 alpha-2',
+                helperText: S.of(context).countryCodeFormat,
               ),
               onFieldSubmitted: (value) {
                 ref.read(settingsProvider.notifier).setExcludeNodes(value);
@@ -177,11 +175,11 @@ class TorSettingsScreen extends ConsumerWidget {
                   excludeNodes: settings.excludeNodes,
                 );
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Tor in riavvio...')),
+                  SnackBar(content: Text(S.of(context).torRestarting)),
                 );
               },
               icon: const Icon(Icons.refresh),
-              label: const Text('Riavvia Tor con nuove impostazioni'),
+              label: Text(S.of(context).restartTor),
             ),
           ),
 

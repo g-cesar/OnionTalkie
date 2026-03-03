@@ -43,7 +43,7 @@ class TorNotifier extends StateNotifier<TorStatus> {
     if (!installed) {
       state = state.copyWith(
         state: TorConnectionState.notInstalled,
-        errorMessage: 'Client Tor non trovato.',
+        errorMessage: 'Tor client not found.',
       );
     }
     return installed;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../core/theme/app_theme.dart';
 import '../services/circuit_service.dart';
@@ -37,7 +38,7 @@ class CircuitPathWidget extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Circuito Tor',
+                S.of(context).torCircuit,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: AppColors.yellow,
                       fontWeight: FontWeight.w700,
@@ -129,7 +130,9 @@ class _HopCard extends StatelessWidget {
           const SizedBox(height: 2),
           // Country name (or relay name as fallback)
           Text(
-            hop.countryCode != null ? hop.countryName : hop.name,
+            hop.countryCode != null
+                ? CircuitService.getLocalizedCountryName(hop.countryCode!, S.of(context))
+                : hop.name,
             style: theme.textTheme.labelSmall?.copyWith(
               color: AppColors.textSecondary,
               fontSize: 9,

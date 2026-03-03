@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 import '../core/theme/app_theme.dart';
 import '../models/call_state.dart';
 import '../models/chat_message.dart';
@@ -238,12 +240,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
               const SizedBox(height: 16),
               Text(
-                'Errore di connessione',
+                S.of(context).connectionError,
                 style: theme.textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
               Text(
-                callState.errorMessage ?? 'Errore sconosciuto',
+                callState.errorMessage ?? S.of(context).unknownError,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -253,7 +255,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               FilledButton.icon(
                 onPressed: () => context.pop(),
                 icon: const Icon(Icons.arrow_back),
-                label: const Text('Torna al menu'),
+                label: Text(S.of(context).backToMenu),
               ),
             ],
           ),
@@ -262,13 +264,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     }
 
     if (callState.phase == CallPhase.ended) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.call_end, size: 64, color: AppColors.textSecondary),
-            SizedBox(height: 16),
-            Text('Chiamata terminata'),
+            const Icon(Icons.call_end, size: 64, color: AppColors.textSecondary),
+            const SizedBox(height: 16),
+            Text(S.of(context).callEnded),
           ],
         ),
       );
@@ -287,7 +289,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Tieni premuto il pulsante\nper parlare in tempo reale',
+              S.of(context).pttInstruction,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -332,19 +334,19 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 theme,
                 Icons.upload,
                 _formatBytes(callState.sentBytes),
-                'Inviati',
+                S.of(context).sent,
               ),
               _buildStat(
                 theme,
                 Icons.download,
                 _formatBytes(callState.receivedBytes),
-                'Ricevuti',
+                S.of(context).received,
               ),
               _buildStat(
                 theme,
                 Icons.timer,
                 _formatDuration(callState.callDuration),
-                'Durata',
+                S.of(context).duration,
               ),
             ],
           ),
@@ -365,7 +367,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'L\'altro sta parlando...',
+                    S.of(context).otherSpeaking,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.error,
                       fontWeight: FontWeight.w600,
@@ -461,8 +463,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               child: TextField(
                 controller: _textController,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Scrivi un messaggio cifrato...',
+                decoration: InputDecoration(
+                  hintText: S.of(context).writeEncryptedMessage,
                 ),
                 onSubmitted: (text) => _sendText(text),
               ),
@@ -516,12 +518,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Termina chiamata'),
-        content: const Text('Vuoi terminare la chiamata?'),
+        title: Text(S.of(context).endCall),
+        content: Text(S.of(context).endCallConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annulla'),
+            child: Text(S.of(context).cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -529,7 +531,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               ref.read(callProvider.notifier).hangUp();
               context.pop();
             },
-            child: const Text('Termina'),
+            child: Text(S.of(context).end),
           ),
         ],
       ),
@@ -541,8 +543,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Chiamata terminata'),
-        content: const Text('L\'altra parte ha riagganciato.'),
+        title: Text(S.of(context).callEndedRemote),
+        content: Text(S.of(context).otherHungUp),
         actions: [
           FilledButton(
             onPressed: () {
@@ -594,7 +596,7 @@ class _ConnectingActions extends StatelessWidget {
             child: _PulsingActionButton(
               onPressed: onRetry,
               icon: Icons.refresh_rounded,
-              label: 'RIPROVA',
+              label: S.of(context).retry,
               color: AppColors.yellow,
               pulsing: pulsing,
             ),
@@ -604,7 +606,7 @@ class _ConnectingActions extends StatelessWidget {
             child: _PulsingActionButton(
               onPressed: onTerminate,
               icon: Icons.close_rounded,
-              label: 'TERMINA',
+              label: S.of(context).terminate,
               color: AppColors.coral,
               pulsing: false,
             ),
@@ -748,9 +750,7 @@ class _TimeoutAlertBox extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'La connessione sta impiegando troppo tempo. '
-                'Potrebbe essere fallita — prova a riprovare '
-                'oppure termina e riprova più tardi.',
+                S.of(context).connectionTimeout,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textPrimary.withValues(alpha: 0.85),
                       height: 1.4,

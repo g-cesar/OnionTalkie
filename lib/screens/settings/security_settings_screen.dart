@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -15,7 +16,7 @@ class SecuritySettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sicurezza'),
+        title: Text(S.of(context).securityTitle),
       ),
       body: ListView(
         children: [
@@ -23,7 +24,7 @@ class SecuritySettingsScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
-              'Cifra di crittografia',
+              S.of(context).cipherSelection,
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -32,8 +33,7 @@ class SecuritySettingsScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Seleziona l\'algoritmo di cifratura. Entrambe le parti vedranno '
-              'un indicatore verde (match) o rosso (mismatch) durante la chiamata.',
+              S.of(context).cipherSelectionHint,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -90,7 +90,7 @@ class SecuritySettingsScreen extends ConsumerWidget {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            cipher.description,
+                            localizedCipherDescription(cipher.name, S.of(context)),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                               fontStyle: FontStyle.italic,
@@ -109,10 +109,9 @@ class SecuritySettingsScreen extends ConsumerWidget {
           // HMAC Authentication
           SwitchListTile(
             secondary: const Icon(Icons.verified_user),
-            title: const Text('Autenticazione HMAC'),
-            subtitle: const Text(
-              'Firma tutti i messaggi con HMAC-SHA256. '
-              'Entrambe le parti devono abilitarlo.',
+            title: Text(S.of(context).hmacAuth),
+            subtitle: Text(
+              S.of(context).hmacAuthSubtitle,
             ),
             value: settings.hmacEnabled,
             onChanged: (value) {
@@ -136,9 +135,7 @@ class SecuritySettingsScreen extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'L\'HMAC viene congelato all\'inizio della chiamata. '
-                        'Le modifiche avranno effetto nella chiamata successiva. '
-                        'Non compatibile con versioni precedenti alla 1.1.3.',
+                        S.of(context).hmacFreezeNote,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: AppColors.textPrimary,
                         ),
@@ -154,10 +151,9 @@ class SecuritySettingsScreen extends ConsumerWidget {
           // Secret passphrase protection
           SwitchListTile(
             secondary: const Icon(Icons.enhanced_encryption),
-            title: const Text('Passphrase protezione segreto'),
-            subtitle: const Text(
-              'Cifra il segreto condiviso a riposo con '
-              'AES-256-CBC e 100.000 iterazioni PBKDF2',
+            title: Text(S.of(context).passphraseProtection),
+            subtitle: Text(
+              S.of(context).passphraseProtectionSubtitle,
             ),
             value: settings.secretPassphraseEnabled,
             onChanged: (value) {

@@ -289,4 +289,64 @@ class CircuitService {
   static String getCountryName(String code) {
     return _countryNames[code.toLowerCase()] ?? code.toUpperCase();
   }
+
+  /// Returns localized country name for a country code.
+  /// Import `package:flutter_gen/gen_l10n/app_localizations.dart` and pass S.of(context).
+  static String getLocalizedCountryName(String code, dynamic l10n) {
+    final lc = code.toLowerCase();
+    switch (lc) {
+      case 'us': return l10n.countryUS;
+      case 'de': return l10n.countryDE;
+      case 'fr': return l10n.countryFR;
+      case 'nl': return l10n.countryNL;
+      case 'gb': return l10n.countryGB;
+      case 'ca': return l10n.countryCA;
+      case 'ch': return l10n.countryCH;
+      case 'se': return l10n.countrySE;
+      case 'no': return l10n.countryNO;
+      case 'fi': return l10n.countryFI;
+      case 'at': return l10n.countryAT;
+      case 'ro': return l10n.countryRO;
+      case 'is': return l10n.countryIS;
+      case 'lu': return l10n.countryLU;
+      case 'cz': return l10n.countryCZ;
+      case 'lt': return l10n.countryLT;
+      case 'md': return l10n.countryMD;
+      case 'bg': return l10n.countryBG;
+      case 'ua': return l10n.countryUA;
+      case 'ru': return l10n.countryRU;
+      case 'jp': return l10n.countryJP;
+      case 'sg': return l10n.countrySG;
+      case 'au': return l10n.countryAU;
+      case 'br': return l10n.countryBR;
+      case 'es': return l10n.countryES;
+      case 'it': return l10n.countryIT;
+      case 'pt': return l10n.countryPT;
+      case 'pl': return l10n.countryPL;
+      case 'hu': return l10n.countryHU;
+      case 'dk': return l10n.countryDK;
+      case 'ie': return l10n.countryIE;
+      case 'nz': return l10n.countryNZ;
+      case 'in': return l10n.countryIN;
+      case 'kr': return l10n.countryKR;
+      case 'za': return l10n.countryZA;
+      case 'mx': return l10n.countryMX;
+      case 'ar': return l10n.countryAR;
+      case 'cl': return l10n.countryCL;
+      case 'co': return l10n.countryCO;
+      case 'hk': return l10n.countryHK;
+      case 'tw': return l10n.countryTW;
+      case 'il': return l10n.countryIL;
+      case 'ae': return l10n.countryAE;
+      case 'tr': return l10n.countryTR;
+      case 'ee': return l10n.countryEE;
+      case 'lv': return l10n.countryLV;
+      case 'sk': return l10n.countrySK;
+      case 'si': return l10n.countrySI;
+      case 'hr': return l10n.countryHR;
+      case 'rs': return l10n.countryRS;
+      case 'be': return l10n.countryBE;
+      default: return code.toUpperCase();
+    }
+  }
 }

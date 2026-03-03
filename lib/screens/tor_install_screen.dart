@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
@@ -14,6 +15,39 @@ class TorInstallScreen extends ConsumerStatefulWidget {
   ConsumerState<TorInstallScreen> createState() => _TorInstallScreenState();
 }
 
+/// Returns localized install option name.
+String _localizedOptionName(BuildContext context, String name) {
+  final l = S.of(context);
+  switch (name) {
+    case 'Orbot (recommended)': return l.orbotRecommended;
+    case 'Orbot — Guardian Project Repo': return l.orbotGuardian;
+    case 'Orbot — Direct download': return l.orbotDirect;
+    case 'Onion Browser': return l.onionBrowser;
+    case 'Homebrew (macOS)': return l.homebrewMacos;
+    case 'Official site': return l.officialSite;
+    case 'Local server (recommended)': return l.localServerRecommended;
+    case 'Install Tor': return l.installTorOption;
+    case 'Native Android/iOS version': return l.nativeVersionOption;
+    default: return name;
+  }
+}
+
+/// Returns localized install option description.
+String _localizedOptionDesc(BuildContext context, String desc) {
+  final l = S.of(context);
+  if (desc.startsWith('Official Tor Project app for Android')) return l.orbotAndroidDesc;
+  if (desc.startsWith('Guardian Project F-Droid')) return l.orbotGuardianDesc;
+  if (desc.startsWith('Download the APK')) return l.orbotDirectDesc;
+  if (desc.startsWith('Official Tor Project app for iOS')) return l.orbotIosDesc;
+  if (desc.startsWith('Tor browser for iOS')) return l.onionBrowserDesc;
+  if (desc.startsWith('Install via terminal')) return l.homebrewDesc;
+  if (desc.startsWith('Download Tor from')) return l.officialSiteDesc;
+  if (desc.startsWith('Start the local server')) return l.localServerDesc;
+  if (desc.startsWith('macOS: brew install')) return l.installTorOptionDesc;
+  if (desc.startsWith('For the best experience')) return l.nativeVersionDesc;
+  return desc;
+}
+
 class _TorInstallScreenState extends ConsumerState<TorInstallScreen> {
   bool _checking = false;
 
@@ -24,16 +58,16 @@ class _TorInstallScreenState extends ConsumerState<TorInstallScreen> {
       setState(() => _checking = false);
       if (installed) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tor trovato! Ora puoi avviare il servizio.'),
+          SnackBar(
+            content: Text(S.of(context).torFoundSnackbar),
             behavior: SnackBarBehavior.floating,
           ),
         );
         Navigator.of(context).pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tor non ancora trovato. Completa l\'installazione e riprova.'),
+          SnackBar(
+            content: Text(S.of(context).torNotFoundSnackbar),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -49,7 +83,7 @@ class _TorInstallScreenState extends ConsumerState<TorInstallScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Installa Tor'),
+        title: Text(S.of(context).installTorTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -70,16 +104,14 @@ class _TorInstallScreenState extends ConsumerState<TorInstallScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Tor non trovato',
+                  S.of(context).torNotFound,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Per utilizzare OnionTalkie è necessario un client Tor '
-                  'installato sul dispositivo. Scegli una delle opzioni '
-                  'qui sotto per installarlo.',
+                  S.of(context).torInstallExplanation,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -92,7 +124,7 @@ class _TorInstallScreenState extends ConsumerState<TorInstallScreen> {
           const SizedBox(height: 24),
 
           Text(
-            'Opzioni di installazione',
+            S.of(context).installOptions,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -118,7 +150,7 @@ class _TorInstallScreenState extends ConsumerState<TorInstallScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.refresh),
-            label: Text(_checking ? 'Verifica in corso...' : 'Ho installato Tor — Verifica'),
+            label: Text(_checking ? S.of(context).verifying : S.of(context).verifyTorInstalled),
           ),
 
           const SizedBox(height: 12),
@@ -126,7 +158,7 @@ class _TorInstallScreenState extends ConsumerState<TorInstallScreen> {
           // Skip / dismiss
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Torna indietro'),
+            child: Text(S.of(context).goBack),
           ),
 
           const SizedBox(height: 16),
@@ -149,9 +181,7 @@ class _TorInstallScreenState extends ConsumerState<TorInstallScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'OnionTalkie utilizza il client Tor per instradare le '
-                    'comunicazioni attraverso hidden service .onion, garantendo '
-                    'anonimato e cifratura end-to-end.',
+                    S.of(context).torUsageExplanation,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -209,14 +239,14 @@ class _InstallOptionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      option.name,
+                      _localizedOptionName(context, option.name),
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      option.description,
+                      _localizedOptionDesc(context, option.description),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),

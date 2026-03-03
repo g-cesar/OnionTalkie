@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
@@ -115,7 +116,7 @@ class _PhaseBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final (label, color, icon) = _phaseInfo(theme);
+    final (label, color, icon) = _phaseInfo(context, theme);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -141,20 +142,20 @@ class _PhaseBadge extends StatelessWidget {
     );
   }
 
-  (String, Color, IconData) _phaseInfo(ThemeData theme) {
+  (String, Color, IconData) _phaseInfo(BuildContext context, ThemeData theme) {
     switch (phase) {
       case CallPhase.idle:
-        return ('Inattivo', theme.colorScheme.outline, Icons.phone_disabled);
+        return (S.of(context).phaseIdle, theme.colorScheme.outline, Icons.phone_disabled);
       case CallPhase.connecting:
-        return ('Connessione...', theme.colorScheme.tertiary, Icons.sync);
+        return (S.of(context).phaseConnecting, theme.colorScheme.tertiary, Icons.sync);
       case CallPhase.ringing:
-        return ('In arrivo', AppColors.yellow, Icons.ring_volume);
+        return (S.of(context).phaseIncoming, AppColors.yellow, Icons.ring_volume);
       case CallPhase.active:
-        return ('In chiamata', AppColors.mint, Icons.call);
+        return (S.of(context).phaseActive, AppColors.mint, Icons.call);
       case CallPhase.ended:
-        return ('Terminata', theme.colorScheme.outline, Icons.call_end);
+        return (S.of(context).phaseEnded, theme.colorScheme.outline, Icons.call_end);
       case CallPhase.error:
-        return ('Errore', theme.colorScheme.error, Icons.error_outline);
+        return (S.of(context).phaseError, theme.colorScheme.error, Icons.error_outline);
     }
   }
 }
@@ -197,7 +198,7 @@ class _CipherRow extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              match ? 'Cipher corrispondenti' : 'Cipher diversi: ${callState.remoteCipher}',
+              match ? S.of(context).cipherMatch : S.of(context).cipherMismatch(callState.remoteCipher!),
               style: theme.textTheme.labelSmall?.copyWith(
                 color: matchColor,
               ),
@@ -256,7 +257,7 @@ class _AnimatedRecordingBadgeState extends State<_AnimatedRecordingBadge>
               Icon(Icons.mic, size: 14, color: AppColors.coral.withValues(alpha: 0.7 + _controller.value * 0.3)),
               const SizedBox(width: 4),
               Text(
-                'Parla',
+                S.of(context).talk,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: AppColors.coral,
                   fontWeight: FontWeight.w600,

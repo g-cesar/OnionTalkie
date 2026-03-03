@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 /// Full-screen animation shown while connecting through Tor.
 class ConnectingAnimation extends StatefulWidget {
@@ -87,8 +88,8 @@ class _ConnectingAnimationState extends State<ConnectingAnimation>
           // Title
           Text(
             widget.isIncoming
-                ? 'In attesa di chiamata...'
-                : 'Connessione in corso...',
+                ? S.of(context).waitingForCall
+                : S.of(context).connecting,
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -99,8 +100,8 @@ class _ConnectingAnimationState extends State<ConnectingAnimation>
           // Subtitle
           Text(
             widget.isIncoming
-                ? 'In ascolto sulla rete Tor'
-                : 'Instradamento tramite circuito Tor',
+                ? S.of(context).waitingOnTor
+                : S.of(context).routingViaTor,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

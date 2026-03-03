@@ -110,3 +110,32 @@ const List<CipherInfo> availableCiphers = [
   CipherInfo(name: 'aria-128-ctr', displayName: 'ARIA-128-CTR', keyBits: 128, family: 'ARIA',
     description: 'ARIA-128 contatore. Chiave minima consigliata.'),
 ];
+
+/// Returns the localized cipher description for use in the UI.
+/// Import `package:flutter_gen/gen_l10n/app_localizations.dart` and pass `S.of(context)`.
+String localizedCipherDescription(String cipherName, dynamic l10n) {
+  switch (cipherName) {
+    case 'aes-256-cbc': return l10n.cipherDescAes256cbc;
+    case 'aes-256-ctr': return l10n.cipherDescAes256ctr;
+    case 'aes-256-cfb': return l10n.cipherDescAes256cfb;
+    case 'aes-256-ofb': return l10n.cipherDescAes256ofb;
+    case 'chacha20-poly1305': return l10n.cipherDescChacha20poly1305;
+    case 'chacha20': return l10n.cipherDescChacha20;
+    case 'camellia-256-cbc': return l10n.cipherDescCamellia256cbc;
+    case 'camellia-256-ctr': return l10n.cipherDescCamellia256ctr;
+    case 'aria-256-cbc': return l10n.cipherDescAria256cbc;
+    case 'aria-256-ctr': return l10n.cipherDescAria256ctr;
+    case 'aes-192-cbc': return l10n.cipherDescAes192cbc;
+    case 'aes-192-ctr': return l10n.cipherDescAes192ctr;
+    case 'camellia-192-cbc': return l10n.cipherDescCamellia192cbc;
+    case 'aria-192-cbc': return l10n.cipherDescAria192cbc;
+    case 'aes-128-cbc': return l10n.cipherDescAes128cbc;
+    case 'aes-128-ctr': return l10n.cipherDescAes128ctr;
+    case 'aes-128-cfb': return l10n.cipherDescAes128cfb;
+    case 'aes-128-ofb': return l10n.cipherDescAes128ofb;
+    case 'camellia-128-cbc': return l10n.cipherDescCamellia128cbc;
+    case 'aria-128-cbc': return l10n.cipherDescAria128cbc;
+    case 'aria-128-ctr': return l10n.cipherDescAria128ctr;
+    default: return cipherName;
+  }
+}

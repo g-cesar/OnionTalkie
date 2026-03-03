@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/app_settings.dart';
@@ -14,13 +15,13 @@ class VoiceChangerScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Voice Changer'),
+        title: Text(S.of(context).voiceChangerTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Effetti vocali applicati all\'audio in uscita prima della codifica Opus.',
+            S.of(context).voiceChangerExplanation,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -30,8 +31,8 @@ class VoiceChangerScreen extends ConsumerWidget {
           // Presets
           ...VoiceChangerPreset.values.map((preset) {
             return RadioListTile<VoiceChangerPreset>(
-              title: Text(_presetLabel(preset)),
-              subtitle: Text(_presetDescription(preset)),
+              title: Text(_presetLabel(context, preset)),
+              subtitle: Text(_presetDescription(context, preset)),
               value: preset,
               groupValue: settings.voiceChangerPreset,
               onChanged: (value) {
@@ -52,7 +53,7 @@ class VoiceChangerScreen extends ConsumerWidget {
           if (settings.voiceChangerPreset == VoiceChangerPreset.custom) ...[
             const Divider(height: 32),
             Text(
-              'Parametri personalizzati',
+              S.of(context).customParameters,
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -164,41 +165,41 @@ class VoiceChangerScreen extends ConsumerWidget {
     );
   }
 
-  String _presetLabel(VoiceChangerPreset preset) {
+  String _presetLabel(BuildContext context, VoiceChangerPreset preset) {
     switch (preset) {
       case VoiceChangerPreset.off:
-        return 'Disattivato';
+        return S.of(context).vcOff;
       case VoiceChangerPreset.deep:
-        return 'Voce profonda';
+        return S.of(context).vcDeep;
       case VoiceChangerPreset.high:
-        return 'Voce alta';
+        return S.of(context).vcHigh;
       case VoiceChangerPreset.robot:
-        return 'Robot';
+        return S.of(context).vcRobot;
       case VoiceChangerPreset.echo:
-        return 'Echo';
+        return S.of(context).vcEcho;
       case VoiceChangerPreset.whisper:
-        return 'Sussurro';
+        return S.of(context).vcWhisper;
       case VoiceChangerPreset.custom:
-        return 'Personalizzato';
+        return S.of(context).vcCustom;
     }
   }
 
-  String _presetDescription(VoiceChangerPreset preset) {
+  String _presetDescription(BuildContext context, VoiceChangerPreset preset) {
     switch (preset) {
       case VoiceChangerPreset.off:
-        return 'Nessun effetto applicato';
+        return S.of(context).vcOffDesc;
       case VoiceChangerPreset.deep:
-        return 'Abbassa il tono della voce';
+        return S.of(context).vcDeepDesc;
       case VoiceChangerPreset.high:
-        return 'Alza il tono della voce';
+        return S.of(context).vcHighDesc;
       case VoiceChangerPreset.robot:
-        return 'Effetto robotico con modulazione';
+        return S.of(context).vcRobotDesc;
       case VoiceChangerPreset.echo:
-        return 'Aggiunge riverbero e eco';
+        return S.of(context).vcEchoDesc;
       case VoiceChangerPreset.whisper:
-        return 'Effetto sussurro con filtro passa-alto';
+        return S.of(context).vcWhisperDesc;
       case VoiceChangerPreset.custom:
-        return 'Configura ogni parametro manualmente';
+        return S.of(context).vcCustomDesc;
     }
   }
 

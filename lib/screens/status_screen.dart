@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
@@ -19,7 +20,7 @@ class StatusScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Stato del sistema'),
+        title: Text(S.of(context).statusScreenTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -27,37 +28,37 @@ class StatusScreen extends ConsumerWidget {
           // Tor Status
           _buildSection(
             theme,
-            'Tor',
+            S.of(context).tor,
             Icons.security,
             [
               _buildStatusRow(
                 theme,
-                'Stato',
-                _torStateLabel(torStatus.state),
+                S.of(context).statusLabel,
+                _torStateLabel(context, torStatus.state),
                 _torStateColor(torStatus.state),
               ),
               _buildStatusRow(
                 theme,
-                'Bootstrap',
+                S.of(context).bootstrap,
                 '${torStatus.bootstrapProgress}%',
                 torStatus.bootstrapProgress == 100 ? AppColors.mint : AppColors.yellow,
               ),
               _buildStatusRow(
                 theme,
-                'Indirizzo Onion',
-                torStatus.onionAddress ?? 'Non disponibile',
+                S.of(context).onionAddressLabel,
+                torStatus.onionAddress ?? S.of(context).notAvailable,
                 torStatus.onionAddress != null ? AppColors.mint : AppColors.textSecondary,
               ),
               _buildStatusRow(
                 theme,
-                'Snowflake',
-                settings.snowflakeEnabled ? 'Abilitato' : 'Disabilitato',
+                S.of(context).snowflake,
+                settings.snowflakeEnabled ? S.of(context).enabled : S.of(context).disabled,
                 settings.snowflakeEnabled ? AppColors.yellow : AppColors.textSecondary,
               ),
               if (settings.excludeNodes.isNotEmpty)
                 _buildStatusRow(
                   theme,
-                  'Nodi esclusi',
+                  S.of(context).excludedNodes,
                   settings.excludeNodes,
                   AppColors.yellow,
                 ),
@@ -69,25 +70,25 @@ class StatusScreen extends ConsumerWidget {
           // Encryption Status
           _buildSection(
             theme,
-            'Cifratura',
+            S.of(context).encryption,
             Icons.lock,
             [
               _buildStatusRow(
                 theme,
-                'Cifra',
+                S.of(context).cipher,
                 settings.cipher.toUpperCase(),
                 AppColors.yellow,
               ),
               _buildStatusRow(
                 theme,
-                'Segreto condiviso',
-                encryption.hasSecret ? 'Configurato' : 'Non impostato',
+                S.of(context).sharedSecretStatus,
+                encryption.hasSecret ? S.of(context).configured : S.of(context).notConfigured,
                 encryption.hasSecret ? AppColors.mint : AppColors.coral,
               ),
               _buildStatusRow(
                 theme,
                 'HMAC',
-                settings.hmacEnabled ? 'Abilitato' : 'Disabilitato',
+                settings.hmacEnabled ? S.of(context).enabled : S.of(context).disabled,
                 settings.hmacEnabled ? AppColors.mint : AppColors.textSecondary,
               ),
             ],
@@ -98,24 +99,24 @@ class StatusScreen extends ConsumerWidget {
           // Audio Status
           _buildSection(
             theme,
-            'Audio',
+            S.of(context).audio,
             Icons.mic,
             [
               _buildStatusRow(
                 theme,
-                'Bitrate Opus',
+                S.of(context).opusBitrate,
                 '${settings.opusBitrate} kbps',
                 AppColors.yellow,
               ),
               _buildStatusRow(
                 theme,
-                'Sample Rate',
+                S.of(context).sampleRate,
                 '${settings.sampleRate} Hz',
                 AppColors.yellow,
               ),
               _buildStatusRow(
                 theme,
-                'Voice Changer',
+                S.of(context).voiceChanger,
                 settings.voiceChangerPreset.name,
                 settings.voiceChangerPreset.name != 'off'
                     ? AppColors.mint
@@ -130,7 +131,7 @@ class StatusScreen extends ConsumerWidget {
           if (torStatus.errorMessage != null)
             _buildSection(
               theme,
-              'Errori',
+              S.of(context).errors,
               Icons.error_outline,
               [
                 Padding(
@@ -220,20 +221,20 @@ class StatusScreen extends ConsumerWidget {
     );
   }
 
-  String _torStateLabel(TorConnectionState state) {
+  String _torStateLabel(BuildContext context, TorConnectionState state) {
     switch (state) {
       case TorConnectionState.stopped:
-        return 'Fermo';
+        return S.of(context).torStopped;
       case TorConnectionState.notInstalled:
-        return 'Non installato';
+        return S.of(context).torNotInstalled;
       case TorConnectionState.starting:
-        return 'In avvio...';
+        return S.of(context).torStartingStatus;
       case TorConnectionState.bootstrapping:
-        return 'Bootstrap...';
+        return S.of(context).torBootstrapping;
       case TorConnectionState.connected:
-        return 'Connesso';
+        return S.of(context).torConnected;
       case TorConnectionState.error:
-        return 'Errore';
+        return S.of(context).torError;
     }
   }
 

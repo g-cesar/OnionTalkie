@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/app_settings.dart';
@@ -14,21 +15,21 @@ class AudioSettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Impostazioni Audio'),
+        title: Text(S.of(context).audioSettingsTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Opus Bitrate
           Text(
-            'Bitrate Opus',
+            S.of(context).opusBitrateLabel,
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Bitrate più alto = qualità migliore, messaggi più grandi',
+            S.of(context).bitrateHint,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -58,7 +59,7 @@ class AudioSettingsScreen extends ConsumerWidget {
 
           // Sample Rate
           Text(
-            'Sample Rate',
+            S.of(context).sampleRateLabel,
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -81,14 +82,14 @@ class AudioSettingsScreen extends ConsumerWidget {
 
           // PTT Chime
           Text(
-            'Suono PTT',
+            S.of(context).pttSoundLabel,
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Suono di notifica quando la parte remota inizia a registrare',
+            S.of(context).pttSoundSubtitle,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -96,7 +97,7 @@ class AudioSettingsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           ...PttChimePreset.values.map((preset) {
             return RadioListTile<PttChimePreset>(
-              title: Text(_chimeLabel(preset)),
+              title: Text(_chimeLabel(context, preset)),
               value: preset,
               groupValue: settings.pttChime,
               onChanged: (value) {
@@ -113,22 +114,22 @@ class AudioSettingsScreen extends ConsumerWidget {
     );
   }
 
-  String _chimeLabel(PttChimePreset preset) {
+  String _chimeLabel(BuildContext context, PttChimePreset preset) {
     switch (preset) {
       case PttChimePreset.off:
-        return 'Disattivato';
+        return S.of(context).soundOff;
       case PttChimePreset.tone:
-        return 'Tono';
+        return S.of(context).soundTone;
       case PttChimePreset.doubleTone:
-        return 'Doppio tono';
+        return S.of(context).soundDoubleTone;
       case PttChimePreset.chirp:
-        return 'Chirp';
+        return S.of(context).soundChirp;
       case PttChimePreset.ding:
-        return 'Ding';
+        return S.of(context).soundDing;
       case PttChimePreset.click:
-        return 'Click';
+        return S.of(context).soundClick;
       case PttChimePreset.custom:
-        return 'Personalizzato';
+        return S.of(context).soundCustom;
     }
   }
 }

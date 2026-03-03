@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../core/theme/app_theme.dart';
 
@@ -79,7 +80,7 @@ class _IncomingCallAnimationState extends State<IncomingCallAnimation>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final displayName =
-        widget.contactName ?? _truncateOnion(widget.address) ?? 'Sconosciuto';
+        widget.contactName ?? _truncateOnion(widget.address) ?? S.of(context).unknown;
 
     return Center(
       child: Padding(
@@ -131,7 +132,7 @@ class _IncomingCallAnimationState extends State<IncomingCallAnimation>
 
             // Title
             Text(
-              'Chiamata in arrivo',
+              S.of(context).incomingCall,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.mint,
@@ -166,7 +167,7 @@ class _IncomingCallAnimationState extends State<IncomingCallAnimation>
             // Auto-accept countdown
             if (widget.autoAcceptSeconds != null && _countdown > 0)
               Text(
-                'Risposta automatica in $_countdown s',
+                S.of(context).autoAnswerCountdown(_countdown),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -189,7 +190,7 @@ class _IncomingCallAnimationState extends State<IncomingCallAnimation>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Rifiuta',
+                      S.of(context).decline,
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: theme.colorScheme.error,
                       ),
@@ -208,7 +209,7 @@ class _IncomingCallAnimationState extends State<IncomingCallAnimation>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Rispondi',
+                      S.of(context).answer,
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: AppColors.mint,
                         fontWeight: FontWeight.w600,

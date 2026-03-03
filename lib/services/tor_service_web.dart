@@ -37,14 +37,14 @@ class TorServiceWeb extends TorServiceBase {
   List<TorInstallOption> getInstallOptions() {
     return const [
       TorInstallOption(
-        name: 'Server locale (consigliato)',
+        name: 'Local server (recommended)',
         description:
-            'Avvia il server locale incluso nel progetto con '
-            '"./start.sh". Serve l\'app web e fa da ponte verso Tor.',
+            'Start the local server included in the project with '
+            '"./start.sh". Serves the web app and bridges to Tor.',
         iconType: IconType.terminal,
       ),
       TorInstallOption(
-        name: 'Installa Tor',
+        name: 'Install Tor',
         description:
             'macOS: brew install tor\n'
             'Linux: sudo apt install tor\n'
@@ -53,10 +53,10 @@ class TorServiceWeb extends TorServiceBase {
         iconType: IconType.download,
       ),
       TorInstallOption(
-        name: 'Versione nativa Android/iOS',
+        name: 'Native Android/iOS version',
         description:
-            'Per la migliore esperienza, usa l\'app nativa che '
-            'gestisce Tor direttamente sul dispositivo.',
+            'For the best experience, use the native app which '
+            'manages Tor directly on the device.',
         url: 'https://github.com/AnonCatalyst/OnionTalkie/releases',
         iconType: IconType.download,
       ),

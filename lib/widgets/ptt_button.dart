@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../core/theme/app_theme.dart';
 
@@ -94,10 +95,10 @@ class _PttButtonState extends State<PttButton> {
               const SizedBox(width: 8),
               Text(
                 !enabled
-                    ? 'STA PARLANDO...'
+                    ? S.of(context).otherIsSpeaking
                     : recording
-                        ? 'TRASMETTENDO...'
-                        : 'TIENI PER PARLARE',
+                        ? S.of(context).transmitting
+                        : S.of(context).holdToTalk,
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: !enabled
                       ? theme.colorScheme.onSurfaceVariant

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/contact.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 import '../providers/contacts_provider.dart';
 import '../providers/providers.dart';
 
@@ -61,15 +63,13 @@ class _DialScreenState extends ConsumerState<DialScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Segreto condiviso'),
+          title: Text(S.of(ctx).secretDialogTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Questo indirizzo non è in rubrica.\n'
-                'Inserisci il segreto condiviso con questa persona '
-                'per cifrare la comunicazione.',
+                S.of(ctx).secretDialogBody,
                 style: Theme.of(ctx).textTheme.bodySmall,
               ),
               const SizedBox(height: 16),
@@ -77,7 +77,7 @@ class _DialScreenState extends ConsumerState<DialScreen> {
                 controller: secretCtrl,
                 obscureText: obscure,
                 decoration: InputDecoration(
-                  labelText: 'Segreto condiviso',
+                  labelText: S.of(ctx).secretDialogTitle,
                   prefixIcon: const Icon(Icons.key, size: 20),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -94,7 +94,7 @@ class _DialScreenState extends ConsumerState<DialScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annulla'),
+              child: Text(S.of(ctx).cancel),
             ),
             FilledButton(
               onPressed: () {
@@ -107,7 +107,7 @@ class _DialScreenState extends ConsumerState<DialScreen> {
                 }
                 context.push('/call', extra: address);
               },
-              child: const Text('Chiama'),
+              child: Text(S.of(ctx).dialTitle),
             ),
           ],
         ),
@@ -128,7 +128,7 @@ class _DialScreenState extends ConsumerState<DialScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chiama'),
+        title: Text(S.of(context).dialTitle),
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -142,7 +142,7 @@ class _DialScreenState extends ConsumerState<DialScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Inserisci l\'indirizzo .onion\ndella persona da chiamare',
+              S.of(context).dialInstruction,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -154,8 +154,8 @@ class _DialScreenState extends ConsumerState<DialScreen> {
               child: TextFormField(
                 controller: _controller,
                 decoration: InputDecoration(
-                  labelText: 'Indirizzo .onion',
-                  hintText: 'xxxxx.onion',
+                  labelText: S.of(context).onionAddress,
+                  hintText: S.of(context).onionAddressHint,
                   prefixIcon: const Icon(Icons.language),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.paste),
@@ -171,11 +171,11 @@ class _DialScreenState extends ConsumerState<DialScreen> {
                 autocorrect: false,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Inserisci un indirizzo';
+                    return S.of(context).enterAddress;
                   }
                   final sanitized = _sanitizeAddress(value);
                   if (!sanitized.endsWith('.onion')) {
-                    return 'L\'indirizzo deve terminare con .onion';
+                    return S.of(context).addressMustEndOnion;
                   }
                   return null;
                 },
@@ -195,7 +195,7 @@ class _DialScreenState extends ConsumerState<DialScreen> {
                       }
                     },
                     icon: const Icon(Icons.qr_code_scanner),
-                    label: const Text('Scansiona QR'),
+                    label: Text(S.of(context).scanQr),
                   ),
                 ),
               ],
@@ -209,7 +209,7 @@ class _DialScreenState extends ConsumerState<DialScreen> {
             FilledButton.icon(
               onPressed: _call,
               icon: const Icon(Icons.call),
-              label: const Text('Chiama'),
+              label: Text(S.of(context).dialTitle),
             ),
           ],
         ),
@@ -236,7 +236,7 @@ class _QuickContacts extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Contatti rapidi',
+          S.of(context).quickContacts,
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w700,
             color: cs.onSurfaceVariant,

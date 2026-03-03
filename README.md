@@ -4,8 +4,6 @@
 
 **OnionTalkie** is a **Push-to-Talk (PTT)** voice communication platform designed for maximum privacy. It uses no central servers, no phone numbers, and no accounts. Each user is identified solely by their locally generated `.onion` address.
 
-> **Note:** The application UI is currently in Italian. An English localization is coming soon.
-
 ### Who is it for?
 
 * **Journalists & activists** operating under censorship or surveillance regimes

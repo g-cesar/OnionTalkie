@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class QrScannerScreen extends ConsumerStatefulWidget {
   const QrScannerScreen({super.key});
@@ -43,7 +44,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Indirizzo trovato'),
+        title: Text(S.of(ctx).addressFound),
         content: Text(
           address,
           style: const TextStyle(fontFamily: 'monospace'),
@@ -64,7 +65,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
               Navigator.pop(ctx); // Chiudi l'alert
               context.pop(address); // Ritorna l'indirizzo scansionato
             },
-            child: const Text('Usa indirizzo'),
+            child: Text(S.of(ctx).useAddress),
           ),
         ],
       ),
@@ -82,8 +83,8 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Indirizzo .onion non valido'),
+        SnackBar(
+          content: Text(S.of(context).invalidOnionAddress),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -110,7 +111,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
   Widget _buildWebInput() {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Inserisci indirizzo')),
+      appBar: AppBar(title: Text(S.of(context).enterAddressTitle)),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -126,13 +127,13 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Scanner QR non disponibile nel browser',
+                  S.of(context).qrNotAvailableWeb,
                   style: theme.textTheme.titleMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Incolla l\'indirizzo .onion per avviare la chiamata.',
+                  S.of(context).pasteOnionInstruction,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -161,7 +162,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
                   child: FilledButton.icon(
                     onPressed: () => _handleAddress(_addressController.text),
                     icon: const Icon(Icons.check),
-                    label: const Text('Conferma'),
+                    label: Text(S.of(context).confirm),
                   ),
                 ),
               ],
@@ -178,7 +179,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scansiona QR'),
+        title: Text(S.of(context).scanQrTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.flash_on),
@@ -235,9 +236,9 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(24),
                 ),
-                child: const Text(
-                  'Inquadra il codice QR con l\'indirizzo .onion',
-                  style: TextStyle(color: Colors.white),
+                child: Text(
+                  S.of(context).qrFrameInstruction,
+                  style: const TextStyle(color: Colors.white),
                 ),
               ),
             ),

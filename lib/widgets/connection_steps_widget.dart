@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../models/call_state.dart';
 
@@ -46,36 +47,36 @@ class _ConnectionStepsWidgetState extends State<ConnectionStepsWidget>
     super.dispose();
   }
 
-  List<_StepData> get _steps => [
+  List<_StepData> _getSteps(BuildContext context) => [
         _StepData(
           ConnectionStep.torCircuit,
           Icons.security,
-          widget.isIncoming ? 'Hidden\nService' : 'Circuito\nTor',
+          widget.isIncoming ? S.of(context).hiddenService : S.of(context).torCircuitStep,
         ),
         _StepData(
           ConnectionStep.peerConnected,
           Icons.link,
-          widget.isIncoming ? 'Peer\nconnesso' : 'Peer\nraggiunto',
+          widget.isIncoming ? S.of(context).peerConnected : S.of(context).peerReached,
         ),
         _StepData(
           ConnectionStep.keyExchange,
           Icons.swap_horiz,
-          'Scambio\nchiavi',
+          S.of(context).keyExchange,
         ),
         _StepData(
           ConnectionStep.keyVerified,
           Icons.verified_user,
-          'Verifica\nchiavi',
+          S.of(context).keyVerification,
         ),
         _StepData(
           ConnectionStep.encrypted,
           Icons.lock,
-          'Canale\ncifrato',
+          S.of(context).encryptedChannel,
         ),
       ];
 
-  ConnectionStep? get _currentStep {
-    for (final s in _steps) {
+  ConnectionStep? _findCurrentStep(List<_StepData> steps) {
+    for (final s in steps) {
       if (!widget.completedSteps.contains(s.step)) return s.step;
     }
     return null;
@@ -84,8 +85,8 @@ class _ConnectionStepsWidgetState extends State<ConnectionStepsWidget>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final steps = _steps;
-    final current = _currentStep;
+    final steps = _getSteps(context);
+    final current = _findCurrentStep(steps);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

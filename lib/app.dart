@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'providers/settings_provider.dart';
 
 class OnionTalkieApp extends ConsumerWidget {
   const OnionTalkieApp({super.key});
@@ -13,6 +15,11 @@ class OnionTalkieApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     final theme = AppTheme.darkTheme();
+    final settings = ref.watch(settingsProvider);
+
+    // Determine locale: empty string → follow device, otherwise explicit
+    final Locale? overrideLocale =
+        settings.locale.isEmpty ? null : Locale(settings.locale);
 
     // Force dark status / navigation bars
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -30,6 +37,9 @@ class OnionTalkieApp extends ConsumerWidget {
         darkTheme: theme,
         themeMode: ThemeMode.dark,
         routerConfig: router,
+        localizationsDelegates: S.localizationsDelegates,
+        supportedLocales: S.supportedLocales,
+        locale: overrideLocale,
       ),
     );
   }

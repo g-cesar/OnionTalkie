@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_theme.dart';
 import '../providers/contacts_provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 /// Screen for adding or editing a contact.
 ///
@@ -93,22 +94,21 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Elimina contatto'),
+        title: Text(S.of(context).deleteContact),
         content: Text(
-          'Vuoi eliminare "${_aliasCtrl.text}" dalla rubrica?\n'
-          'Anche il segreto condiviso sarà rimosso.',
+          S.of(context).deleteContactConfirm(_aliasCtrl.text),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annulla'),
+            child: Text(S.of(context).cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.coral,
             ),
-            child: const Text('Elimina'),
+            child: Text(S.of(context).delete),
           ),
         ],
       ),
@@ -126,12 +126,12 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Modifica contatto' : 'Nuovo contatto'),
+        title: Text(_isEditing ? S.of(context).editContact : S.of(context).newContact),
         actions: [
           if (_isEditing)
             IconButton(
               icon: Icon(Icons.delete_outline, color: AppColors.coral),
-              tooltip: 'Elimina',
+              tooltip: S.of(context).delete,
               onPressed: _confirmDelete,
             ),
         ],
@@ -146,15 +146,15 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
               // ── Alias ────────────────────────────
               TextFormField(
                 controller: _aliasCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Alias',
-                  hintText: 'es. Mario',
-                  prefixIcon: Icon(Icons.person_outline),
+                decoration: InputDecoration(
+                  labelText: S.of(context).alias,
+                  hintText: S.of(context).aliasHint,
+                  prefixIcon: const Icon(Icons.person_outline),
                 ),
                 textCapitalization: TextCapitalization.words,
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) {
-                    return "Inserisci un alias";
+                    return S.of(context).aliasRequired;
                   }
                   return null;
                 },
@@ -165,15 +165,15 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
               TextFormField(
                 controller: _onionCtrl,
                 decoration: InputDecoration(
-                  labelText: 'Indirizzo .onion',
-                  hintText: 'xxxxx.onion',
+                  labelText: S.of(context).onionAddress,
+                  hintText: S.of(context).onionAddressHint,
                   prefixIcon: const Icon(Icons.language),
                   suffixIcon: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
                         icon: const Icon(Icons.paste, size: 20),
-                        tooltip: 'Incolla',
+                        tooltip: S.of(context).paste,
                         onPressed: () async {
                           final data =
                               await Clipboard.getData('text/plain');
@@ -184,7 +184,7 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.qr_code_scanner, size: 20),
-                        tooltip: 'Scansiona QR',
+                        tooltip: S.of(context).scanQr,
                         onPressed: () async {
                           final result =
                               await context.push<String>('/qr-scanner');
@@ -200,11 +200,11 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
                 autocorrect: false,
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) {
-                    return "Inserisci un indirizzo";
+                    return S.of(context).addressRequired;
                   }
                   final sanitised = _sanitiseOnion(v);
                   if (!sanitised.endsWith('.onion')) {
-                    return "L'indirizzo deve terminare con .onion";
+                    return S.of(context).addressMustEndOnion;
                   }
                   return null;
                 },
@@ -215,8 +215,8 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
               TextFormField(
                 controller: _secretCtrl,
                 decoration: InputDecoration(
-                  labelText: 'Segreto condiviso',
-                  hintText: 'Chiave pre-condivisa con questo contatto',
+                  labelText: S.of(context).sharedSecret,
+                  hintText: S.of(context).sharedSecretHint,
                   prefixIcon: const Icon(Icons.key),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -249,10 +249,7 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Il segreto viene usato per cifrare la comunicazione. '
-                        'Entrambi i peer devono avere lo stesso segreto. '
-                        'Con SPAKE2 attivo, viene usato per derivare chiavi '
-                        'di sessione uniche ad ogni chiamata.',
+                        S.of(context).sharedSecretExplanation,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: cs.onPrimaryContainer,
                         ),
@@ -267,7 +264,7 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
               FilledButton.icon(
                 onPressed: _save,
                 icon: Icon(_isEditing ? Icons.save : Icons.person_add),
-                label: Text(_isEditing ? 'Salva' : 'Aggiungi contatto'),
+                label: Text(_isEditing ? S.of(context).save : S.of(context).addContactButton),
               ),
             ],
           ),

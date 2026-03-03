@@ -38,24 +38,24 @@ class TorServiceNative extends TorServiceBase {
     if (Platform.isAndroid) {
       return const [
         TorInstallOption(
-          name: 'Orbot (consigliato)',
+          name: 'Orbot (recommended)',
           description:
-              'App ufficiale del Tor Project per Android. '
-              'Fornisce un proxy Tor completo con VPN mode.',
+              'Official Tor Project app for Android. '
+              'Provides a complete Tor proxy with VPN mode.',
           url: 'https://play.google.com/store/apps/details?id=org.torproject.android',
           iconType: IconType.store,
         ),
         TorInstallOption(
           name: 'Orbot — Guardian Project Repo',
           description:
-              'Repo F-Droid del Guardian Project (contiene Orbot aggiornato).',
+              'Guardian Project F-Droid repo (contains updated Orbot).',
           url: 'https://guardianproject.info/fdroid/',
           iconType: IconType.download,
         ),
         TorInstallOption(
-          name: 'Orbot — Download diretto',
+          name: 'Orbot — Direct download',
           description:
-              'Scarica l\'APK direttamente dal sito del Tor Project.',
+              'Download the APK directly from the Tor Project website.',
           url: 'https://guardianproject.info/apps/org.torproject.android/',
           iconType: IconType.web,
         ),
@@ -63,17 +63,17 @@ class TorServiceNative extends TorServiceBase {
     } else if (Platform.isIOS) {
       return const [
         TorInstallOption(
-          name: 'Orbot (consigliato)',
+          name: 'Orbot (recommended)',
           description:
-              'App ufficiale del Tor Project per iOS. '
-              'Fornisce un proxy Tor integrato nel sistema.',
+              'Official Tor Project app for iOS. '
+              'Provides a system-integrated Tor proxy.',
           url: 'https://apps.apple.com/app/orbot/id1609461599',
           iconType: IconType.store,
         ),
         TorInstallOption(
           name: 'Onion Browser',
           description:
-              'Browser Tor per iOS con proxy SOCKS5 integrato.',
+              'Tor browser for iOS with built-in SOCKS5 proxy.',
           url: 'https://apps.apple.com/app/onion-browser/id519296448',
           iconType: IconType.store,
         ),
@@ -83,13 +83,13 @@ class TorServiceNative extends TorServiceBase {
       return const [
         TorInstallOption(
           name: 'Homebrew (macOS)',
-          description: 'Installa tramite terminale: brew install tor',
+          description: 'Install via terminal: brew install tor',
           command: 'brew install tor',
           iconType: IconType.terminal,
         ),
         TorInstallOption(
-          name: 'Sito ufficiale',
-          description: 'Scarica Tor dal sito del progetto.',
+          name: 'Official site',
+          description: 'Download Tor from the project website.',
           url: 'https://www.torproject.org/download/',
           iconType: IconType.web,
         ),
@@ -210,7 +210,7 @@ class TorServiceNative extends TorServiceBase {
       if (torBinary == null) {
         _updateStatus(_status.copyWith(
           state: TorConnectionState.notInstalled,
-          errorMessage: 'Client Tor non trovato. Installa Tor per continuare.',
+          errorMessage: 'Tor client not found. Install Tor to continue.',
         ));
         return;
       }

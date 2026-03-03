@@ -6,6 +6,7 @@ import '../core/theme/app_theme.dart';
 import '../models/contact.dart';
 import '../providers/contacts_provider.dart';
 import '../providers/tor_provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 /// Screen showing the address book.
 class ContactsScreen extends ConsumerWidget {
@@ -18,11 +19,11 @@ class ContactsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Contatti'),
+        title: Text(S.of(context).contactsTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add_alt_1),
-            tooltip: 'Aggiungi contatto',
+            tooltip: S.of(context).addContact,
             onPressed: () => context.push('/contacts/add'),
           ),
         ],
@@ -67,14 +68,14 @@ class ContactsScreen extends ConsumerWidget {
                 size: 80, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
             const SizedBox(height: 24),
             Text(
-              'Nessun contatto',
+              S.of(context).noContacts,
               style: theme.textTheme.titleLarge?.copyWith(
                 color: cs.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Aggiungi un contatto salvando\nil suo indirizzo .onion e un alias',
+              S.of(context).addContactHint,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: cs.onSurfaceVariant.withValues(alpha: 0.7),
@@ -151,7 +152,7 @@ class _ContactTile extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(left: 6),
                               child: Tooltip(
-                                message: 'Indirizzo .onion cambiato',
+                                message: S.of(context).onionAddressChanged,
                                 child: Icon(Icons.warning_amber_rounded,
                                     size: 18, color: AppColors.coral),
                               ),
@@ -160,7 +161,7 @@ class _ContactTile extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(left: 6),
                               child: Tooltip(
-                                message: 'Nessun segreto condiviso',
+                                message: S.of(context).noSharedSecret,
                                 child: Icon(Icons.key_off,
                                     size: 16,
                                     color: cs.onSurfaceVariant
@@ -183,7 +184,7 @@ class _ContactTile extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.only(top: 2),
                           child: Text(
-                            'Ultimo contatto: ${_formatDate(contact.lastContactedAt!)}',
+                            S.of(context).lastContact(_formatDate(context, contact.lastContactedAt!)),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: cs.onSurfaceVariant.withValues(alpha: 0.5),
                               fontSize: 10,
@@ -199,7 +200,7 @@ class _ContactTile extends StatelessWidget {
                 IconButton(
                   onPressed: onCall,
                   icon: Icon(Icons.call, color: AppColors.mint),
-                  tooltip: 'Chiama',
+                  tooltip: S.of(context).callTooltip,
                   style: IconButton.styleFrom(
                     backgroundColor: AppColors.mint.withValues(alpha: 0.15),
                   ),
@@ -235,13 +236,13 @@ class _ContactTile extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(BuildContext context, DateTime date) {
     final now = DateTime.now();
     final diff = now.difference(date);
-    if (diff.inMinutes < 1) return 'adesso';
-    if (diff.inHours < 1) return '${diff.inMinutes}min fa';
-    if (diff.inDays < 1) return '${diff.inHours}h fa';
-    if (diff.inDays < 7) return '${diff.inDays}g fa';
+    if (diff.inMinutes < 1) return S.of(context).timeNow;
+    if (diff.inHours < 1) return S.of(context).timeMinAgo(diff.inMinutes);
+    if (diff.inDays < 1) return S.of(context).timeHoursAgo(diff.inHours);
+    if (diff.inDays < 7) return S.of(context).timeDaysAgo(diff.inDays);
     return '${date.day}/${date.month}/${date.year}';
   }
 }

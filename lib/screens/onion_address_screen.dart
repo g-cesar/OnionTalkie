@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../core/theme/app_theme.dart';
 import '../providers/tor_provider.dart';
@@ -15,11 +16,11 @@ class OnionAddressScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final torStatus = ref.watch(torProvider);
     final theme = Theme.of(context);
-    final address = torStatus.onionAddress ?? 'Non disponibile';
+    final address = torStatus.onionAddress ?? S.of(context).notAvailable;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Il mio indirizzo'),
+        title: Text(S.of(context).myAddress),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -62,7 +63,7 @@ class OnionAddressScreen extends ConsumerWidget {
 
               // Address text
               Text(
-                'Il tuo indirizzo Onion',
+                S.of(context).yourOnionAddress,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -105,8 +106,7 @@ class OnionAddressScreen extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Alcuni scanner QR aggiungono automaticamente http:// — '
-                          'il prefisso viene rimosso automaticamente quando si compone.',
+                          S.of(context).qrScannerNote,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: AppColors.yellow,
                           ),
@@ -127,11 +127,11 @@ class OnionAddressScreen extends ConsumerWidget {
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: torStatus.onionAddress!));
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Indirizzo copiato negli appunti')),
+                            SnackBar(content: Text(S.of(context).addressCopied)),
                           );
                         },
                         icon: const Icon(Icons.copy),
-                        label: const Text('Copia'),
+                        label: Text(S.of(context).copy),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -142,7 +142,7 @@ class OnionAddressScreen extends ConsumerWidget {
                             Clipboard.setData(ClipboardData(text: torStatus.onionAddress!));
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Indirizzo copiato negli appunti')),
+                                SnackBar(content: Text(S.of(context).addressCopied)),
                               );
                             }
                           } else {
@@ -150,7 +150,7 @@ class OnionAddressScreen extends ConsumerWidget {
                           }
                         },
                         icon: const Icon(Icons.share),
-                        label: const Text('Condividi'),
+                        label: Text(S.of(context).share),
                       ),
                     ),
                   ],

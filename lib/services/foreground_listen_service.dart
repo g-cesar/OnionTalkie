@@ -22,9 +22,9 @@ class ForegroundListenService {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: 'tp_listen_channel',
-        channelName: 'OnionTalkie – Ascolto',
+        channelName: 'OnionTalkie – Listening',
         channelDescription:
-            'Notifica persistente mentre OnionTalkie ascolta chiamate in arrivo.',
+            'Persistent notification while OnionTalkie listens for incoming calls.',
         channelImportance: NotificationChannelImportance.LOW,
         priority: NotificationPriority.LOW,
         enableVibration: false,
@@ -65,8 +65,8 @@ class ForegroundListenService {
 
       final result = await FlutterForegroundTask.startService(
         serviceId: 500,
-        notificationTitle: 'OnionTalkie — In ascolto',
-        notificationText: 'In attesa di chiamate in arrivo su Tor…',
+        notificationTitle: 'OnionTalkie — Listening',
+        notificationText: 'Waiting for incoming calls on Tor…',
         callback: _foregroundTaskCallback,
       );
 
@@ -84,13 +84,13 @@ class ForegroundListenService {
     if (kIsWeb) return;
     try {
       await FlutterForegroundTask.updateService(
-        notificationTitle: 'OnionTalkie — Chiamata in arrivo!',
-        notificationText: 'Tocca per rispondere.',
+        notificationTitle: 'OnionTalkie — Incoming call!',
+        notificationText: 'Tap to answer.',
       );
       // Re-vibrate notification to draw attention
       await FlutterForegroundTask.updateService(
-        notificationTitle: 'OnionTalkie — Chiamata in arrivo!',
-        notificationText: 'Connessione in arrivo rilevata.',
+        notificationTitle: 'OnionTalkie — Incoming call!',
+        notificationText: 'Incoming connection detected.',
       );
     } catch (e) {
       debugPrint('ForegroundListenService: notifyIncomingCall error → $e');
@@ -102,8 +102,8 @@ class ForegroundListenService {
     if (kIsWeb) return;
     try {
       await FlutterForegroundTask.updateService(
-        notificationTitle: 'OnionTalkie — Chiamata attiva',
-        notificationText: 'Comunicazione cifrata in corso.',
+        notificationTitle: 'OnionTalkie — Active call',
+        notificationText: 'Encrypted communication in progress.',
       );
     } catch (e) {
       debugPrint('ForegroundListenService: notifyActiveCall error → $e');

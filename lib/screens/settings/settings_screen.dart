@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -15,16 +16,16 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Impostazioni'),
+        title: Text(S.of(context).settings),
       ),
       body: ListView(
         children: [
           // Security Section
-          _buildSectionHeader(theme, 'Sicurezza'),
+          _buildSectionHeader(theme, S.of(context).security),
           ListTile(
             leading: const Icon(Icons.lock),
-            title: const Text('Sicurezza'),
-            subtitle: Text('Cifra: ${settings.cipher.toUpperCase()}'),
+            title: Text(S.of(context).security),
+            subtitle: Text('${S.of(context).cipher}: ${settings.cipher.toUpperCase()}'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/security'),
           ),
@@ -33,8 +34,8 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('PAKE (SPAKE2)'),
             subtitle: Text(
               settings.keyExchangeMode == KeyExchangeMode.pake
-                  ? 'Scambio chiave zero-knowledge attivo'
-                  : 'Chiave manuale statica (PBKDF2)',
+                  ? S.of(context).pakeActive
+                  : S.of(context).manualKey,
             ),
             value: settings.keyExchangeMode == KeyExchangeMode.pake,
             onChanged: (value) {
@@ -47,19 +48,19 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
 
           // Audio Section
-          _buildSectionHeader(theme, 'Audio'),
+          _buildSectionHeader(theme, S.of(context).audioSettings),
           ListTile(
             leading: const Icon(Icons.music_note),
-            title: const Text('Impostazioni audio'),
+            title: Text(S.of(context).audioSettings),
             subtitle: Text('Opus ${settings.opusBitrate}kbps, ${settings.sampleRate}Hz'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/audio'),
           ),
           ListTile(
             leading: const Icon(Icons.voice_chat),
-            title: const Text('Voice Changer'),
+            title: Text(S.of(context).voiceChangerTitle),
             subtitle: Text(settings.voiceChangerPreset.name == 'off'
-                ? 'Disattivato'
+                ? S.of(context).voiceChangerOff
                 : settings.voiceChangerPreset.name),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/voice-changer'),
@@ -68,13 +69,13 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
 
           // Tor Section
-          _buildSectionHeader(theme, 'Tor'),
+          _buildSectionHeader(theme, S.of(context).torSettings),
           ListTile(
             leading: const Icon(Icons.router),
-            title: const Text('Impostazioni Tor'),
+            title: Text(S.of(context).torSettings),
             subtitle: Text(settings.snowflakeEnabled
-                ? 'Snowflake abilitato'
-                : 'Connessione diretta'),
+                ? S.of(context).snowflakeEnabled
+                : S.of(context).directConnection),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/tor'),
           ),
@@ -82,12 +83,12 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
 
           // General Section
-          _buildSectionHeader(theme, 'Generale'),
+          _buildSectionHeader(theme, S.of(context).general),
           SwitchListTile(
             secondary: const Icon(Icons.notifications),
-            title: const Text('Suono PTT'),
+            title: Text(S.of(context).pttSound),
             subtitle: Text(settings.pttChime.name == 'off'
-                ? 'Nessun suono'
+                ? S.of(context).noSound
                 : 'Preset: ${settings.pttChime.name}'),
             value: settings.pttChime.name != 'off',
             onChanged: (value) {
@@ -100,19 +101,28 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
 
+          // Language selector
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: Text(S.of(context).language),
+            subtitle: Text(_currentLanguageLabel(context, settings.locale)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showLanguagePicker(context, ref, settings.locale),
+          ),
+
           const Divider(),
 
           // About Section
-          _buildSectionHeader(theme, 'Info'),
-          const ListTile(
-            leading: Icon(Icons.info_outline),
-            title: Text('OnionTalkie'),
-            subtitle: Text('v1.0.0 — Comunicazione cifrata PTT su Tor'),
+          _buildSectionHeader(theme, S.of(context).info),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text('OnionTalkie'),
+            subtitle: Text(S.of(context).versionInfo),
           ),
           ListTile(
             leading: const Icon(Icons.code),
-            title: const Text('Codice sorgente'),
-            subtitle: const Text('Licenza open source'),
+            title: Text(S.of(context).sourceCode),
+            subtitle: Text(S.of(context).openSourceLicense),
             onTap: () {
               // Could open GitLab link
             },
@@ -135,6 +145,67 @@ class SettingsScreen extends ConsumerWidget {
           letterSpacing: 0.3,
         ),
       ),
+    );
+  }
+
+  String _currentLanguageLabel(BuildContext context, String locale) {
+    switch (locale) {
+      case 'en':
+        return S.of(context).languageEn;
+      case 'it':
+        return S.of(context).languageIt;
+      default:
+        return S.of(context).languageSystem;
+    }
+  }
+
+  void _showLanguagePicker(BuildContext context, WidgetRef ref, String current) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  S.of(context).language,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              RadioListTile<String>(
+                title: Text(S.of(context).languageSystem),
+                value: '',
+                groupValue: current,
+                onChanged: (v) {
+                  ref.read(settingsProvider.notifier).setLocale(v!);
+                  Navigator.pop(ctx);
+                },
+              ),
+              RadioListTile<String>(
+                title: Text(S.of(context).languageEn),
+                value: 'en',
+                groupValue: current,
+                onChanged: (v) {
+                  ref.read(settingsProvider.notifier).setLocale(v!);
+                  Navigator.pop(ctx);
+                },
+              ),
+              RadioListTile<String>(
+                title: Text(S.of(context).languageIt),
+                value: 'it',
+                groupValue: current,
+                onChanged: (v) {
+                  ref.read(settingsProvider.notifier).setLocale(v!);
+                  Navigator.pop(ctx);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -39,8 +40,8 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
     if (mounted) {
       setState(() => _saved = true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('URL relay salvato'),
+        SnackBar(
+          content: Text(S.of(context).relayUrlSaved),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -55,7 +56,7 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Server Relay')),
+      appBar: AppBar(title: Text(S.of(context).relayServer)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -74,7 +75,7 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
                     Icon(Icons.dns, color: theme.colorScheme.primary),
                     const SizedBox(width: 8),
                     Text(
-                      'Cos\'è il relay server?',
+                      S.of(context).whatIsRelay,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -83,9 +84,7 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Nel browser non è possibile connettersi direttamente alla rete Tor. '
-                  'Il relay server funge da ponte: riceve la connessione WebSocket dal browser '
-                  'e la instrada attraverso Tor verso la destinazione .onion.',
+                  S.of(context).relayExplanation,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -98,7 +97,7 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
 
           // URL input
           Text(
-            'URL del relay',
+            S.of(context).relayUrl,
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -110,7 +109,7 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
               hintText: 'wss://relay.example.com/ws',
               prefixIcon: const Icon(Icons.link),
               border: const OutlineInputBorder(),
-              helperText: 'Inserisci l\'URL WebSocket del tuo relay server.',
+              helperText: S.of(context).relayUrlHelper,
               helperMaxLines: 2,
             ),
             keyboardType: TextInputType.url,
@@ -123,7 +122,7 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
           FilledButton.icon(
             onPressed: _save,
             icon: Icon(_saved ? Icons.check : Icons.save),
-            label: Text(_saved ? 'Salvato' : 'Salva'),
+            label: Text(_saved ? S.of(context).saved : S.of(context).save),
           ),
 
           const SizedBox(height: 32),
@@ -139,19 +138,19 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Come funziona',
+                  S.of(context).howItWorks,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 12),
-                _buildFlowStep(theme, '1', 'Browser', 'Connessione WebSocket al relay'),
+                _buildFlowStep(theme, '1', S.of(context).relayStepBrowser, S.of(context).relayStepBrowserDesc),
                 _buildFlowArrow(theme),
-                _buildFlowStep(theme, '2', 'Relay Server', 'Converte WebSocket → TCP Tor SOCKS5'),
+                _buildFlowStep(theme, '2', S.of(context).relayStepRelay, S.of(context).relayStepRelayDesc),
                 _buildFlowArrow(theme),
-                _buildFlowStep(theme, '3', 'Rete Tor', 'Instrada il traffico verso .onion'),
+                _buildFlowStep(theme, '3', S.of(context).relayStepTor, S.of(context).relayStepTorDesc),
                 _buildFlowArrow(theme),
-                _buildFlowStep(theme, '4', 'Destinazione', 'Hidden service .onion del contatto'),
+                _buildFlowStep(theme, '4', S.of(context).relayStepDest, S.of(context).relayStepDestDesc),
               ],
             ),
           ),
@@ -176,8 +175,7 @@ class _RelaySettingsScreenState extends ConsumerState<RelaySettingsScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Il relay server può vedere il traffico in transito (ma NON il contenuto, '
-                    'che è cifrato end-to-end). Usa solo relay server fidati o gestisci il tuo.',
+                    S.of(context).relaySecurityNote,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.error,
                     ),

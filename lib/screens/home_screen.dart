@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -56,7 +57,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'OnionTalkie',
+                        S.of(context).appTitle,
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: cs.onSurface,
@@ -64,7 +65,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Comunicazione cifrata PTT',
+                        S.of(context).appSubtitle,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: cs.onSurfaceVariant,
                         ),
@@ -98,7 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 28),
 
             // ── Section label ──
-            _SectionLabel(label: 'Azioni Rapide'),
+            _SectionLabel(label: S.of(context).quickActions),
 
             const SizedBox(height: 14),
 
@@ -113,8 +114,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Expanded(
                         child: MenuActionCard(
                           icon: Icons.hearing,
-                          title: 'Ascolta',
-                          subtitle: 'Attendi chiamate',
+                          title: S.of(context).listen,
+                          subtitle: S.of(context).listenSubtitle,
                           color: AppColors.yellow,
                           onTap: torStatus.isReady
                               ? () => context.push('/call')
@@ -125,8 +126,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Expanded(
                         child: MenuActionCard(
                           icon: Icons.call,
-                          title: 'Chiama',
-                          subtitle: 'Indirizzo .onion',
+                          title: S.of(context).call,
+                          subtitle: S.of(context).callSubtitle,
                           color: AppColors.coral,
                           onTap: torStatus.isReady
                               ? () => context.push('/dial')
@@ -151,8 +152,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Expanded(
                         child: MenuActionCard(
                           icon: Icons.qr_code,
-                          title: 'Indirizzo',
-                          subtitle: 'Mostra / Condividi',
+                          title: S.of(context).address,
+                          subtitle: S.of(context).addressSubtitle,
                           color: AppColors.mint,
                           onTap: torStatus.isReady
                               ? () => context.push('/onion-address')
@@ -170,13 +171,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // ── Section label ──
             Row(
               children: [
-                Expanded(child: _SectionLabel(label: 'Tor & Sistema')),
+                Expanded(child: _SectionLabel(label: S.of(context).torAndSystem)),
                 if (torStatus.isReady)
                   TextButton.icon(
                     onPressed: () => context.push('/status'),
                     icon: Icon(Icons.north_east, size: 16, color: cs.primary),
                     label: Text(
-                      'Stato',
+                      S.of(context).status,
                       style: TextStyle(color: cs.primary),
                     ),
                   ),
@@ -190,16 +191,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             _buildListTile(
               context,
               icon: Icons.assessment,
-              title: 'Stato del sistema',
-              subtitle: 'Tor, segreto, connessione',
+              title: S.of(context).systemStatus,
+              subtitle: S.of(context).systemStatusSubtitle,
               onTap: () => context.push('/status'),
             ),
             if (torStatus.isReady)
               _buildListTile(
                 context,
                 icon: Icons.refresh,
-                title: 'Ruota indirizzo onion',
-                subtitle: 'Genera un nuovo indirizzo .onion',
+                title: S.of(context).rotateOnion,
+                subtitle: S.of(context).rotateOnionSubtitle,
                 onTap: () => _showRotateConfirmation(context),
               ),
 
@@ -218,8 +219,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return _buildListTile(
           context,
           icon: Icons.download,
-          title: 'Installa Tor',
-          subtitle: 'Client Tor non trovato — tocca per installare',
+          title: S.of(context).installTor,
+          subtitle: S.of(context).installTorSubtitle,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const TorInstallScreen()),
           ),
@@ -229,8 +230,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return _buildListTile(
           context,
           icon: Icons.play_arrow,
-          title: 'Avvia Tor',
-          subtitle: torStatus.errorMessage ?? 'Avvia il servizio Tor',
+          title: S.of(context).startTor,
+          subtitle: torStatus.errorMessage ?? S.of(context).startTorSubtitle,
           onTap: () {
             final settings = ref.read(settingsProvider);
             ref.read(torProvider.notifier).start(
@@ -244,8 +245,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return _buildListTile(
           context,
           icon: Icons.hourglass_top,
-          title: 'Tor in avvio...',
-          subtitle: 'Bootstrap: ${torStatus.bootstrapProgress}%',
+          title: S.of(context).torStarting,
+          subtitle: S.of(context).torBootstrapProgress(torStatus.bootstrapProgress),
           trailing: SizedBox(
             width: 24,
             height: 24,
@@ -259,8 +260,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return _buildListTile(
           context,
           icon: Icons.stop,
-          title: 'Ferma Tor',
-          subtitle: 'Servizio attivo e connesso',
+          title: S.of(context).stopTor,
+          subtitle: S.of(context).stopTorSubtitle,
           onTap: () => ref.read(torProvider.notifier).stop(),
         );
     }
@@ -326,23 +327,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Ruota indirizzo Onion'),
-        content: const Text(
-          'Questo distruggerà il tuo attuale indirizzo .onion e ne genererà uno nuovo. '
-          'Le persone che hanno il tuo vecchio indirizzo non potranno più contattarti. '
-          'Continuare?',
-        ),
+        title: Text(S.of(context).rotateOnionTitle),
+        content: Text(S.of(context).rotateOnionConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Annulla'),
+            child: Text(S.of(context).cancel),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(context);
               ref.read(torProvider.notifier).rotateOnionAddress();
             },
-            child: const Text('Ruota'),
+            child: Text(S.of(context).rotate),
           ),
         ],
       ),
@@ -403,13 +400,11 @@ class _ContactsActionCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final contacts = ref.watch(contactsProvider);
     final count = contacts.length;
-    final subtitle = count == 0
-        ? 'Aggiungi contatti'
-        : '$count contatt${count == 1 ? 'o' : 'i'}';
+    final subtitle = S.of(context).contactCount(count);
 
     return MenuActionCard(
       icon: Icons.contacts,
-      title: 'Contatti',
+      title: S.of(context).contacts,
       subtitle: subtitle,
       color: const Color(0xFF3A7BD5),
       onTap: onTap,
