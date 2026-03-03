@@ -109,6 +109,22 @@ class TorServiceNative extends TorServiceBase {
     return _dataDir!;
   }
 
+  /// Extract a Flutter asset to [destPath] if the file does not already exist.
+  Future<void> _extractAssetIfMissing(String assetKey, String destPath) async {
+    final dest = File(destPath);
+    if (await dest.exists()) return;
+    try {
+      final data = await rootBundle.load(assetKey);
+      await dest.writeAsBytes(
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+        flush: true,
+      );
+      debugPrint('TorServiceNative: extracted $assetKey → $destPath');
+    } catch (e) {
+      debugPrint('TorServiceNative: failed to extract $assetKey: $e');
+    }
+  }
+
   /// Generate the torrc configuration file.
   Future<String> _generateTorrc({
     bool snowflake = false,
@@ -117,13 +133,21 @@ class TorServiceNative extends TorServiceBase {
     final dataDir = await _getDataDir();
     final hiddenServiceDir = '$dataDir/hidden_service';
 
+    // Extract GeoIP database files from Flutter assets (if not already present)
+    final geoipPath = '$dataDir/geoip';
+    final geoip6Path = '$dataDir/geoip6';
+    await _extractAssetIfMissing('assets/tor/geoip', geoipPath);
+    await _extractAssetIfMissing('assets/tor/geoip6', geoip6Path);
+
     final buffer = StringBuffer()
       ..writeln('SocksPort ${AppConstants.torSocksPort}')
       ..writeln('DataDirectory $dataDir')
       ..writeln('HiddenServiceDir $hiddenServiceDir')
       ..writeln('HiddenServicePort ${AppConstants.listenPort} 127.0.0.1:${AppConstants.listenPort}')
       ..writeln('Log notice file $dataDir/tor.log')
-      ..writeln('Log notice stdout');
+      ..writeln('Log notice stdout')
+      ..writeln('GeoIPFile $geoipPath')
+      ..writeln('GeoIPv6File $geoip6Path');
 
     if (excludeNodes.isNotEmpty) {
       buffer

@@ -127,9 +127,9 @@ class _HopCard extends StatelessWidget {
             style: const TextStyle(fontSize: 22),
           ),
           const SizedBox(height: 2),
-          // Country name
+          // Country name (or relay name as fallback)
           Text(
-            hop.countryName,
+            hop.countryCode != null ? hop.countryName : hop.name,
             style: theme.textTheme.labelSmall?.copyWith(
               color: AppColors.textSecondary,
               fontSize: 9,
