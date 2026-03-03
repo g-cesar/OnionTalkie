@@ -20,13 +20,6 @@ class ContactsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(S.of(context).contactsTitle),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person_add_alt_1),
-            tooltip: S.of(context).addContact,
-            onPressed: () => context.push('/contacts/add'),
-          ),
-        ],
       ),
       body: contacts.isEmpty
           ? _buildEmptyState(context)
@@ -48,7 +41,7 @@ class ContactsScreen extends ConsumerWidget {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/contacts/add'),
-        backgroundColor: AppColors.mint,
+        backgroundColor: AppColors.yellow,
         foregroundColor: Colors.white,
         child: const Icon(Icons.person_add),
       ),

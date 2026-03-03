@@ -11,6 +11,7 @@ import '../providers/tor_provider.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/circuit_path_widget.dart';
 import '../widgets/menu_action_card.dart';
+import '../widgets/menu_action_card_compact.dart';
 import '../widgets/status_card.dart';
 import 'tor_install_screen.dart';
 
@@ -128,7 +129,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           icon: Icons.call,
                           title: S.of(context).call,
                           subtitle: S.of(context).callSubtitle,
-                          color: AppColors.coral,
+                          color: AppColors.mint,
                           onTap: torStatus.isReady
                               ? () => context.push('/dial')
                               : null,
@@ -138,23 +139,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                // ── Secondary row: Contatti + Indirizzo ──
+                // ── Secondary row: Contatti + Indirizzo (compact) ──
                 SizedBox(
-                  height: 120,
+                  height: 72,
                   child: Row(
                     children: [
                       Expanded(
-                        child: _ContactsActionCard(
+                        child: _ContactsCompactCard(
                           onTap: () => context.push('/contacts'),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: MenuActionCard(
+                        child: MenuActionCardCompact(
                           icon: Icons.qr_code,
                           title: S.of(context).address,
                           subtitle: S.of(context).addressSubtitle,
-                          color: AppColors.mint,
+                          iconColor: AppColors.yellow,
+                          textColor: AppColors.yellow,
+                          backgroundColor: Colors.white,
                           onTap: torStatus.isReady
                               ? () => context.push('/onion-address')
                               : null,
@@ -391,10 +394,10 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// Action card that shows the contacts count badge.
-class _ContactsActionCard extends ConsumerWidget {
+/// Compact action card that shows the contacts count badge.
+class _ContactsCompactCard extends ConsumerWidget {
   final VoidCallback? onTap;
-  const _ContactsActionCard({this.onTap});
+  const _ContactsCompactCard({this.onTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -402,11 +405,13 @@ class _ContactsActionCard extends ConsumerWidget {
     final count = contacts.length;
     final subtitle = S.of(context).contactCount(count);
 
-    return MenuActionCard(
+    return MenuActionCardCompact(
       icon: Icons.contacts,
       title: S.of(context).contacts,
       subtitle: subtitle,
-      color: const Color(0xFF3A7BD5),
+      iconColor: const Color(0xFF3A7BD5),
+      textColor: const Color(0xFF3A7BD5),
+      backgroundColor: Colors.white,
       onTap: onTap,
     );
   }
