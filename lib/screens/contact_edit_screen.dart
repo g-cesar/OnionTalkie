@@ -215,7 +215,7 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
               TextFormField(
                 controller: _secretCtrl,
                 decoration: InputDecoration(
-                  labelText: 'Segreto condiviso (opzionale)',
+                  labelText: 'Segreto condiviso',
                   hintText: 'Chiave pre-condivisa con questo contatto',
                   prefixIcon: const Icon(Icons.key),
                   suffixIcon: IconButton(

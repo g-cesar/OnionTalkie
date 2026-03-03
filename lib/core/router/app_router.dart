@@ -10,7 +10,6 @@ import '../../screens/home_screen.dart';
 import '../../screens/onion_address_screen.dart';
 import '../../screens/qr_scanner_screen.dart';
 import '../../screens/settings/audio_settings_screen.dart';
-import '../../screens/settings/relay_settings_screen.dart';
 import '../../screens/settings/security_settings_screen.dart';
 import '../../screens/settings/settings_screen.dart';
 import '../../screens/settings/tor_settings_screen.dart';
@@ -101,10 +100,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'voice-changer',
                 builder: (context, state) => const VoiceChangerScreen(),
-              ),
-              GoRoute(
-                path: 'relay',
-                builder: (context, state) => const RelaySettingsScreen(),
               ),
             ],
           ),

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -79,16 +78,6 @@ class SettingsScreen extends ConsumerWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/tor'),
           ),
-          if (kIsWeb)
-            ListTile(
-              leading: const Icon(Icons.dns),
-              title: const Text('Server Relay'),
-              subtitle: Text(settings.relayServerUrl.isEmpty
-                  ? 'Non configurato'
-                  : settings.relayServerUrl),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/settings/relay'),
-            ),
 
           const Divider(),
 

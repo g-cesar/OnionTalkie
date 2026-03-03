@@ -69,7 +69,7 @@ class _DialScreenState extends ConsumerState<DialScreen> {
               Text(
                 'Questo indirizzo non è in rubrica.\n'
                 'Inserisci il segreto condiviso con questa persona '
-                '(oppure lascia vuoto per non cifrare).',
+                'per cifrare la comunicazione.',
                 style: Theme.of(ctx).textTheme.bodySmall,
               ),
               const SizedBox(height: 16),
@@ -77,7 +77,7 @@ class _DialScreenState extends ConsumerState<DialScreen> {
                 controller: secretCtrl,
                 obscureText: obscure,
                 decoration: InputDecoration(
-                  labelText: 'Segreto (opzionale)',
+                  labelText: 'Segreto condiviso',
                   prefixIcon: const Icon(Icons.key, size: 20),
                   suffixIcon: IconButton(
                     icon: Icon(

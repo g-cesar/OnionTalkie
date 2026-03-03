@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -34,6 +35,10 @@ class TorSettingsScreen extends ConsumerWidget {
           ),
 
           const Divider(height: 24),
+
+          // The options below require a local Tor instance with a
+          // ControlPort — not available on web.
+          if (!kIsWeb) ...[
 
           // Show Circuit Path
           SwitchListTile(
@@ -151,6 +156,8 @@ class TorSettingsScreen extends ConsumerWidget {
           ),
 
           const SizedBox(height: 32),
+
+          ], // end !kIsWeb
         ],
       ),
     );

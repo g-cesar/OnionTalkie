@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,6 +8,7 @@ import '../core/theme/app_theme.dart';
 import '../models/call_state.dart';
 import '../providers/settings_provider.dart';
 import '../services/circuit_service.dart';
+import 'circuit_path_widget.dart';
 
 /// Header widget displayed at the top of the call screen, showing
 /// remote address, cipher match status, call phase, and optionally the
@@ -22,7 +24,7 @@ class CallHeader extends ConsumerStatefulWidget {
 
 class _CallHeaderState extends ConsumerState<CallHeader> {
   Timer? _circuitTimer;
-  String? _circuitPath;
+  List<CircuitHop>? _circuitHops;
 
   @override
   void initState() {
@@ -37,6 +39,7 @@ class _CallHeaderState extends ConsumerState<CallHeader> {
   }
 
   void _maybeStartCircuitPolling() {
+    if (kIsWeb) return; // No local Tor ControlPort on web.
     final show = ref.read(settingsProvider).showCircuitPath;
     if (!show) return;
     _fetchCircuit();
@@ -46,9 +49,9 @@ class _CallHeaderState extends ConsumerState<CallHeader> {
   }
 
   Future<void> _fetchCircuit() async {
-    final path = await CircuitService.getCircuitPath();
-    if (mounted && path != null) {
-      setState(() => _circuitPath = path);
+    final hops = await CircuitService.getCircuitHops();
+    if (mounted && hops != null && hops.isNotEmpty) {
+      setState(() => _circuitHops = hops);
     }
   }
 
@@ -64,7 +67,7 @@ class _CallHeaderState extends ConsumerState<CallHeader> {
     } else if (!showCircuit && _circuitTimer != null) {
       _circuitTimer?.cancel();
       _circuitTimer = null;
-      _circuitPath = null;
+      _circuitHops = null;
     }
 
     return Container(
@@ -143,10 +146,8 @@ class _CallHeaderState extends ConsumerState<CallHeader> {
               _CipherRow(callState: callState),
 
             // Circuit path row
-            if (showCircuit && _circuitPath != null) ...[
-              const SizedBox(height: 6),
-              _CircuitPathRow(path: _circuitPath!),
-            ],
+            if (showCircuit && _circuitHops != null)
+              CircuitPathWidget(hops: _circuitHops!),
           ],
         ),
       ),
@@ -318,36 +319,4 @@ class _AnimatedRecordingBadgeState extends State<_AnimatedRecordingBadge>
   }
 }
 
-/// Shows the Tor circuit path (Guard → Relay → Exit/Rendezvous).
-class _CircuitPathRow extends StatelessWidget {
-  final String path;
 
-  const _CircuitPathRow({required this.path});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Icon(
-          Icons.route,
-          size: 14,
-          color: AppColors.yellow.withValues(alpha: 0.8),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            path,
-            style: theme.textTheme.labelSmall?.copyWith(
-              fontFamily: 'monospace',
-              color: theme.colorScheme.onSurfaceVariant,
-              fontSize: 10,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
-}

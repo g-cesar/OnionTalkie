@@ -34,6 +34,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   Timer? _durationTimer;
+  DateTime? _connectingStartTime;
 
   @override
   void initState() {
@@ -49,6 +50,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   Future<void> _initCall() async {
     final callNotifier = ref.read(callProvider.notifier);
     callNotifier.reset();
+    setState(() => _connectingStartTime = DateTime.now());
 
     // If calling a contact, load their shared secret.
     if (widget.contactId != null) {
@@ -157,6 +159,14 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     ThemeData theme,
   ) {
     if (callState.phase == CallPhase.connecting) {
+      // Determine if buttons should pulse (connection taking too long).
+      final elapsed = _connectingStartTime != null
+          ? DateTime.now().difference(_connectingStartTime!).inSeconds
+          : 0;
+      // Outgoing: 15s covers first retry cycle; listening: 30s.
+      final threshold = callState.isIncoming ? 30 : 15;
+      final shouldPulse = elapsed >= threshold;
+
       return Column(
         children: [
           Expanded(
@@ -169,6 +179,15 @@ class _CallScreenState extends ConsumerState<CallScreen> {
             completedSteps: callState.completedSteps,
             isIncoming: callState.isIncoming,
           ),
+          const SizedBox(height: 12),
+          if (shouldPulse)
+            _TimeoutAlertBox(),
+          _ConnectingActions(
+            pulsing: shouldPulse,
+            onRetry: _retry,
+            onTerminate: _terminate,
+          ),
+          const SizedBox(height: 16),
         ],
       );
     }
@@ -467,6 +486,32 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     }
   }
 
+  void _retry() {
+    final callNotifier = ref.read(callProvider.notifier);
+    callNotifier.reset();
+    setState(() => _connectingStartTime = DateTime.now());
+
+    // Reload shared secret if needed.
+    if (widget.contactId != null) {
+      final contact =
+          ref.read(contactsProvider.notifier).findById(widget.contactId!);
+      if (contact != null && contact.hasSecret) {
+        ref.read(encryptionServiceProvider).setSharedSecret(contact.sharedSecret);
+      }
+    }
+
+    if (widget.remoteAddress != null && widget.remoteAddress!.isNotEmpty) {
+      callNotifier.call(widget.remoteAddress!, contactId: widget.contactId);
+    } else {
+      callNotifier.listenForCalls();
+    }
+  }
+
+  void _terminate() {
+    ref.read(callProvider.notifier).reset();
+    context.pop();
+  }
+
   void _showHangUpConfirmation() {
     showDialog(
       context: context,
@@ -522,5 +567,199 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds % 60;
     return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+}
+
+// ─── Connecting-phase action buttons ────────────────────────────
+
+/// Row with RIPROVA and TERMINA buttons shown during connecting phase.
+class _ConnectingActions extends StatelessWidget {
+  final bool pulsing;
+  final VoidCallback onRetry;
+  final VoidCallback onTerminate;
+
+  const _ConnectingActions({
+    required this.pulsing,
+    required this.onRetry,
+    required this.onTerminate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          Expanded(
+            child: _PulsingActionButton(
+              onPressed: onRetry,
+              icon: Icons.refresh_rounded,
+              label: 'RIPROVA',
+              color: AppColors.yellow,
+              pulsing: pulsing,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _PulsingActionButton(
+              onPressed: onTerminate,
+              icon: Icons.close_rounded,
+              label: 'TERMINA',
+              color: AppColors.coral,
+              pulsing: false,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A [FilledButton] that pulses (scale + glow) when [pulsing] is true,
+/// drawing the user's attention when the connection is taking too long.
+class _PulsingActionButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool pulsing;
+
+  const _PulsingActionButton({
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+    required this.color,
+    this.pulsing = false,
+  });
+
+  @override
+  State<_PulsingActionButton> createState() => _PulsingActionButtonState();
+}
+
+class _PulsingActionButtonState extends State<_PulsingActionButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    if (widget.pulsing) _controller.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _PulsingActionButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.pulsing && !_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    } else if (!widget.pulsing && _controller.isAnimating) {
+      _controller.stop();
+      _controller.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = widget.pulsing ? _controller.value : 0.0;
+        return Transform.scale(
+          scale: 1.0 + t * 0.03,
+          child: Container(
+            decoration: widget.pulsing
+                ? BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: widget.color.withValues(alpha: 0.25 + t * 0.25),
+                        blurRadius: 8 + t * 12,
+                        spreadRadius: t * 2,
+                      ),
+                    ],
+                  )
+                : null,
+            child: child,
+          ),
+        );
+      },
+      child: FilledButton.icon(
+        onPressed: widget.onPressed,
+        icon: Icon(widget.icon, size: 18),
+        label: Text(
+          widget.label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+          ),
+        ),
+        style: FilledButton.styleFrom(
+          backgroundColor: widget.color,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Timeout alert ──────────────────────────────────────────────
+
+/// Alert box shown when the connection seems to be taking too long.
+class _TimeoutAlertBox extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.yellow.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: AppColors.yellow.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Icon(
+                Icons.warning_amber_rounded,
+                size: 20,
+                color: AppColors.yellow,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'La connessione sta impiegando troppo tempo. '
+                'Potrebbe essere fallita — prova a riprovare '
+                'oppure termina e riprova più tardi.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textPrimary.withValues(alpha: 0.85),
+                      height: 1.4,
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
