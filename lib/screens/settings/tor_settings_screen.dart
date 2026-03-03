@@ -45,14 +45,44 @@ class TorSettingsScreen extends ConsumerWidget {
             secondary: const Icon(Icons.route),
             title: const Text('Mostra percorso circuito'),
             subtitle: const Text(
-              'Visualizza relay, nomi e paesi del circuito Tor durante le chiamate. '
-              'Si aggiorna ogni 60 secondi.',
+              'Visualizza relay, nomi e paesi del circuito Tor '
+              'nella schermata home e durante le chiamate.',
             ),
             value: settings.showCircuitPath,
             onChanged: (value) {
               ref.read(settingsProvider.notifier).setShowCircuitPath(value);
             },
           ),
+
+          // Circuit refresh interval (only if circuit is enabled)
+          if (settings.showCircuitPath) ...[
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.timer_outlined),
+              title: const Text('Intervallo aggiornamento'),
+              subtitle: Text(
+                'Il circuito si aggiorna ogni ${settings.circuitRefreshSeconds} secondi',
+              ),
+              trailing: DropdownButton<int>(
+                value: settings.circuitRefreshSeconds,
+                underline: const SizedBox.shrink(),
+                items: const [
+                  DropdownMenuItem(value: 15, child: Text('15 s')),
+                  DropdownMenuItem(value: 30, child: Text('30 s')),
+                  DropdownMenuItem(value: 60, child: Text('60 s')),
+                  DropdownMenuItem(value: 120, child: Text('2 min')),
+                  DropdownMenuItem(value: 300, child: Text('5 min')),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    ref
+                        .read(settingsProvider.notifier)
+                        .setCircuitRefreshSeconds(value);
+                  }
+                },
+              ),
+            ),
+          ],
 
           const Divider(height: 24),
 

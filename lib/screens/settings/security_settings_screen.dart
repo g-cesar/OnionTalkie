@@ -42,39 +42,65 @@ class SecuritySettingsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
 
           ...availableCiphers.map((cipher) {
-            return RadioListTile<String>(
-              title: Text(cipher.displayName),
-              subtitle: Text('${cipher.keyBits}-bit • ${cipher.family}'),
-              value: cipher.name,
-              groupValue: settings.cipher,
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(settingsProvider.notifier).setCipher(value);
-                }
-              },
-              secondary: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: cipher.keyBits >= 256
-                      ? AppColors.mint.withValues(alpha: 0.1)
-                      : cipher.keyBits >= 192
-                          ? AppColors.yellow.withValues(alpha: 0.1)
-                          : AppColors.coral.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${cipher.keyBits}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: cipher.keyBits >= 256
-                        ? AppColors.mint
-                        : cipher.keyBits >= 192
-                            ? AppColors.yellow
-                            : AppColors.coral,
+            final isSelected = cipher.name == settings.cipher;
+            return Column(
+              children: [
+                RadioListTile<String>(
+                  title: Text(cipher.displayName),
+                  subtitle: Text('${cipher.keyBits}-bit • ${cipher.family}'),
+                  value: cipher.name,
+                  groupValue: settings.cipher,
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref.read(settingsProvider.notifier).setCipher(value);
+                    }
+                  },
+                  secondary: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: cipher.keyBits >= 256
+                          ? AppColors.mint.withValues(alpha: 0.1)
+                          : cipher.keyBits >= 192
+                              ? AppColors.yellow.withValues(alpha: 0.1)
+                              : AppColors.coral.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${cipher.keyBits}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: cipher.keyBits >= 256
+                            ? AppColors.mint
+                            : cipher.keyBits >= 192
+                                ? AppColors.yellow
+                                : AppColors.coral,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                if (isSelected)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(72, 0, 16, 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline,
+                            size: 14,
+                            color: theme.colorScheme.onSurfaceVariant),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            cipher.description,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             );
           }),
 

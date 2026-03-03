@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_theme.dart';
 import '../models/tor_status.dart';
+import '../providers/circuit_provider.dart';
 import '../providers/contacts_provider.dart';
 import '../providers/tor_provider.dart';
 import '../providers/settings_provider.dart';
+import '../widgets/circuit_path_widget.dart';
 import '../widgets/menu_action_card.dart';
 import '../widgets/status_card.dart';
 import 'tor_install_screen.dart';
@@ -34,7 +36,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final torStatus = ref.watch(torProvider);
-    ref.watch(settingsProvider);
+    final settings = ref.watch(settingsProvider);
+    final circuitHops = ref.watch(circuitHopsProvider);
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
@@ -85,6 +88,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
             // ── Status Banner ──
             StatusCard(torStatus: torStatus),
+
+            // ── Circuit Path (when Tor connected + enabled) ──
+            if (torStatus.state == TorConnectionState.connected &&
+                settings.showCircuitPath &&
+                circuitHops != null)
+              CircuitPathWidget(hops: circuitHops),
 
             const SizedBox(height: 28),
 

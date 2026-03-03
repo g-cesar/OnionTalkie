@@ -45,6 +45,10 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await updateSettings(state.copyWith(showCircuitPath: enabled));
   }
 
+  Future<void> setCircuitRefreshSeconds(int seconds) async {
+    await updateSettings(state.copyWith(circuitRefreshSeconds: seconds));
+  }
+
   Future<void> setExcludeNodes(String nodes) async {
     await updateSettings(state.copyWith(excludeNodes: nodes));
   }

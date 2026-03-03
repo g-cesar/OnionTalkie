@@ -47,6 +47,7 @@ class AppSettings {
   final bool snowflakeEnabled;
   final String excludeNodes;
   final bool showCircuitPath;
+  final int circuitRefreshSeconds;
 
   // PTT
   final bool autoListen;
@@ -74,6 +75,7 @@ class AppSettings {
     this.snowflakeEnabled = false,
     this.excludeNodes = '',
     this.showCircuitPath = false,
+    this.circuitRefreshSeconds = 60,
     this.autoListen = false,
     this.pttChime = PttChimePreset.off,
     this.voiceChangerPreset = VoiceChangerPreset.off,
@@ -96,6 +98,7 @@ class AppSettings {
     bool? snowflakeEnabled,
     String? excludeNodes,
     bool? showCircuitPath,
+    int? circuitRefreshSeconds,
     bool? autoListen,
     PttChimePreset? pttChime,
     VoiceChangerPreset? voiceChangerPreset,
@@ -117,6 +120,7 @@ class AppSettings {
       snowflakeEnabled: snowflakeEnabled ?? this.snowflakeEnabled,
       excludeNodes: excludeNodes ?? this.excludeNodes,
       showCircuitPath: showCircuitPath ?? this.showCircuitPath,
+      circuitRefreshSeconds: circuitRefreshSeconds ?? this.circuitRefreshSeconds,
       autoListen: autoListen ?? this.autoListen,
       pttChime: pttChime ?? this.pttChime,
       voiceChangerPreset: voiceChangerPreset ?? this.voiceChangerPreset,
@@ -140,6 +144,7 @@ class AppSettings {
     'snowflakeEnabled': snowflakeEnabled,
     'excludeNodes': excludeNodes,
     'showCircuitPath': showCircuitPath,
+    'circuitRefreshSeconds': circuitRefreshSeconds,
     'autoListen': autoListen,
     'pttChime': pttChime.name,
     'voiceChangerPreset': voiceChangerPreset.name,
@@ -166,6 +171,7 @@ class AppSettings {
       snowflakeEnabled: json['snowflakeEnabled'] as bool? ?? false,
       excludeNodes: json['excludeNodes'] as String? ?? '',
       showCircuitPath: json['showCircuitPath'] as bool? ?? false,
+      circuitRefreshSeconds: json['circuitRefreshSeconds'] as int? ?? 60,
       autoListen: json['autoListen'] as bool? ?? false,
       pttChime: PttChimePreset.values.firstWhere(
         (e) => e.name == json['pttChime'],

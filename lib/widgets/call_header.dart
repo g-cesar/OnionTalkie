@@ -1,74 +1,25 @@
-import 'dart:async';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
 import '../models/call_state.dart';
+import '../providers/circuit_provider.dart';
 import '../providers/settings_provider.dart';
-import '../services/circuit_service.dart';
 import 'circuit_path_widget.dart';
 
 /// Header widget displayed at the top of the call screen, showing
 /// remote address, cipher match status, call phase, and optionally the
 /// Tor circuit path when "Mostra percorso circuito" is enabled.
-class CallHeader extends ConsumerStatefulWidget {
+class CallHeader extends ConsumerWidget {
   final CallState callState;
 
   const CallHeader({super.key, required this.callState});
 
   @override
-  ConsumerState<CallHeader> createState() => _CallHeaderState();
-}
-
-class _CallHeaderState extends ConsumerState<CallHeader> {
-  Timer? _circuitTimer;
-  List<CircuitHop>? _circuitHops;
-
-  @override
-  void initState() {
-    super.initState();
-    _maybeStartCircuitPolling();
-  }
-
-  @override
-  void dispose() {
-    _circuitTimer?.cancel();
-    super.dispose();
-  }
-
-  void _maybeStartCircuitPolling() {
-    if (kIsWeb) return; // No local Tor ControlPort on web.
-    final show = ref.read(settingsProvider).showCircuitPath;
-    if (!show) return;
-    _fetchCircuit();
-    _circuitTimer = Timer.periodic(const Duration(seconds: 60), (_) {
-      _fetchCircuit();
-    });
-  }
-
-  Future<void> _fetchCircuit() async {
-    final hops = await CircuitService.getCircuitHops();
-    if (mounted && hops != null && hops.isNotEmpty) {
-      setState(() => _circuitHops = hops);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final callState = widget.callState;
     final showCircuit = ref.watch(settingsProvider).showCircuitPath;
-
-    // Start / stop polling if setting changes at runtime.
-    if (showCircuit && _circuitTimer == null) {
-      _maybeStartCircuitPolling();
-    } else if (!showCircuit && _circuitTimer != null) {
-      _circuitTimer?.cancel();
-      _circuitTimer = null;
-      _circuitHops = null;
-    }
+    final circuitHops = ref.watch(circuitHopsProvider);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -146,8 +97,8 @@ class _CallHeaderState extends ConsumerState<CallHeader> {
               _CipherRow(callState: callState),
 
             // Circuit path row
-            if (showCircuit && _circuitHops != null)
-              CircuitPathWidget(hops: _circuitHops!),
+            if (showCircuit && circuitHops != null)
+              CircuitPathWidget(hops: circuitHops),
           ],
         ),
       ),
