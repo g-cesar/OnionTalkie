@@ -16,6 +16,7 @@ import '../providers/settings_provider.dart';
 import '../widgets/call_header.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/connecting_animation.dart';
+import '../widgets/connection_steps_widget.dart';
 import '../widgets/incoming_call_animation.dart';
 import '../widgets/ptt_button.dart';
 
@@ -156,9 +157,19 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     ThemeData theme,
   ) {
     if (callState.phase == CallPhase.connecting) {
-      return ConnectingAnimation(
-        isIncoming: callState.isIncoming,
-        address: callState.remoteAddress,
+      return Column(
+        children: [
+          Expanded(
+            child: ConnectingAnimation(
+              isIncoming: callState.isIncoming,
+              address: callState.remoteAddress,
+            ),
+          ),
+          ConnectionStepsWidget(
+            completedSteps: callState.completedSteps,
+            isIncoming: callState.isIncoming,
+          ),
+        ],
       );
     }
 
@@ -174,17 +185,27 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         } catch (_) {}
       }
 
-      return IncomingCallAnimation(
-        address: callState.remoteAddress,
-        contactName: contactName,
-        autoAcceptSeconds: 3,
-        onAccept: () {
-          ref.read(callProvider.notifier).acceptIncomingCall();
-        },
-        onReject: () {
-          ref.read(callProvider.notifier).hangUp();
-          context.pop();
-        },
+      return Column(
+        children: [
+          ConnectionStepsWidget(
+            completedSteps: callState.completedSteps,
+            isIncoming: callState.isIncoming,
+          ),
+          Expanded(
+            child: IncomingCallAnimation(
+              address: callState.remoteAddress,
+              contactName: contactName,
+              autoAcceptSeconds: 3,
+              onAccept: () {
+                ref.read(callProvider.notifier).acceptIncomingCall();
+              },
+              onReject: () {
+                ref.read(callProvider.notifier).hangUp();
+                context.pop();
+              },
+            ),
+          ),
+        ],
       );
     }
 

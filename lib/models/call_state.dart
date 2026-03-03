@@ -14,6 +14,16 @@ enum RemotePttState {
   recording,
 }
 
+/// Discrete step in the connection establishment process.
+/// Used by [ConnectionStepsWidget] to show visual progress.
+enum ConnectionStep {
+  torCircuit,
+  peerConnected,
+  keyExchange,
+  keyVerified,
+  encrypted,
+}
+
 /// Represents the state of a call.
 class CallState {
   final CallPhase phase;
@@ -30,6 +40,7 @@ class CallState {
   final bool isIncoming;
   final bool hmacEnabled;
   final bool pakeActive;
+  final Set<ConnectionStep> completedSteps;
 
   const CallState({
     this.phase = CallPhase.idle,
@@ -46,6 +57,7 @@ class CallState {
     this.isIncoming = false,
     this.hmacEnabled = false,
     this.pakeActive = false,
+    this.completedSteps = const {},
   });
 
   bool get ciphersMatch =>
@@ -56,6 +68,11 @@ class CallState {
   Duration? get callDuration {
     if (callStartTime == null) return null;
     return DateTime.now().difference(callStartTime!);
+  }
+
+  /// Return a copy with [step] added to [completedSteps].
+  CallState addStep(ConnectionStep step) {
+    return copyWith(completedSteps: {...completedSteps, step});
   }
 
   CallState copyWith({
@@ -73,6 +90,7 @@ class CallState {
     bool? isIncoming,
     bool? hmacEnabled,
     bool? pakeActive,
+    Set<ConnectionStep>? completedSteps,
   }) {
     return CallState(
       phase: phase ?? this.phase,
@@ -89,6 +107,7 @@ class CallState {
       isIncoming: isIncoming ?? this.isIncoming,
       hmacEnabled: hmacEnabled ?? this.hmacEnabled,
       pakeActive: pakeActive ?? this.pakeActive,
+      completedSteps: completedSteps ?? this.completedSteps,
     );
   }
 }

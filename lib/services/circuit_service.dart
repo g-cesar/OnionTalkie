@@ -44,7 +44,7 @@ class CircuitService {
   /// Query Tor ControlPort for the current circuit path.
   ///
   /// Returns a human-readable circuit path string like:
-  /// "Guard (DE) → Relay (NL) → Rendezvous (CH)"
+  /// "Guard: Relay1 → Relay: Relay2 → Exit/Rendezvous: Relay3"
   ///
   /// Returns null if circuit info is unavailable.
   static Future<String?> getCircuitPath() async {
@@ -55,7 +55,9 @@ class CircuitService {
         AppConstants.torControlPort,
       ).timeout(const Duration(seconds: 5));
 
-      final completer = Completer<String>();
+      // Use a single listener with a switchable completer so we don't
+      // violate Dart's single-subscription stream constraint.
+      Completer<String> activeCompleter = Completer<String>();
       final buffer = StringBuffer();
 
       socket.listen(
@@ -63,14 +65,18 @@ class CircuitService {
           buffer.write(utf8.decode(data));
           final content = buffer.toString();
           if (content.contains('\r\n.\r\n') || content.contains('250 OK')) {
-            if (!completer.isCompleted) completer.complete(content);
+            if (!activeCompleter.isCompleted) {
+              activeCompleter.complete(content);
+            }
           }
         },
         onError: (e) {
-          if (!completer.isCompleted) completer.completeError(e);
+          if (!activeCompleter.isCompleted) activeCompleter.completeError(e);
         },
         onDone: () {
-          if (!completer.isCompleted) completer.complete(buffer.toString());
+          if (!activeCompleter.isCompleted) {
+            activeCompleter.complete(buffer.toString());
+          }
         },
       );
 
@@ -79,7 +85,7 @@ class CircuitService {
       await socket.flush();
 
       // Wait for auth response
-      final authResponse = await completer.future.timeout(
+      final authResponse = await activeCompleter.future.timeout(
         const Duration(seconds: 5),
       );
 
@@ -88,29 +94,15 @@ class CircuitService {
         return null;
       }
 
+      // Reset buffer and completer for the next command
+      buffer.clear();
+      activeCompleter = Completer<String>();
+
       // Request circuit status
-      final circuitCompleter = Completer<String>();
-      final circuitBuffer = StringBuffer();
-
-      socket.listen(
-        (data) {
-          circuitBuffer.write(utf8.decode(data));
-          final content = circuitBuffer.toString();
-          if (content.contains('\r\n.\r\n') || content.contains('250 OK')) {
-            if (!circuitCompleter.isCompleted) {
-              circuitCompleter.complete(content);
-            }
-          }
-        },
-        onError: (e) {
-          if (!circuitCompleter.isCompleted) circuitCompleter.completeError(e);
-        },
-      );
-
       socket.write('GETINFO circuit-status\r\n');
       await socket.flush();
 
-      final circuitResponse = await circuitCompleter.future.timeout(
+      final circuitResponse = await activeCompleter.future.timeout(
         const Duration(seconds: 5),
       );
 

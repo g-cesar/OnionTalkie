@@ -67,6 +67,7 @@ class CallNotifier extends StateNotifier<CallState> {
 
     try {
       await _connectionService.listen();
+      state = state.addStep(ConnectionStep.torCircuit);
       _setupMessageHandler();
     } catch (e) {
       await ForegroundListenService.stop();
@@ -117,6 +118,10 @@ class CallNotifier extends StateNotifier<CallState> {
         }
       }
 
+      state = state
+          .addStep(ConnectionStep.torCircuit)
+          .addStep(ConnectionStep.peerConnected);
+
       _setupMessageHandler();
 
       await ForegroundListenService.startListening();
@@ -150,6 +155,13 @@ class CallNotifier extends StateNotifier<CallState> {
 
     _connectionService.sendCipher(settings.cipher);
     _encryptionService.setCipher(settings.cipher);
+
+    if (!pakeActive) {
+      state = state
+          .addStep(ConnectionStep.keyExchange)
+          .addStep(ConnectionStep.keyVerified);
+    }
+    state = state.addStep(ConnectionStep.encrypted);
 
     ForegroundListenService.notifyActiveCall();
 
@@ -200,6 +212,9 @@ class CallNotifier extends StateNotifier<CallState> {
 
       case 'ID':
         state = state.copyWith(remoteAddress: data);
+        if (!state.completedSteps.contains(ConnectionStep.peerConnected)) {
+          state = state.addStep(ConnectionStep.peerConnected);
+        }
         // If incoming call, resolve the peer and transition to ringing.
         if (state.isIncoming && state.phase == CallPhase.connecting) {
           _resolveIncomingPeer(data);
@@ -300,6 +315,11 @@ class CallNotifier extends StateNotifier<CallState> {
 
       _spake2!.processRemotePublicValue(base64Value);
 
+      if (!state.completedSteps.contains(ConnectionStep.peerConnected)) {
+        state = state.addStep(ConnectionStep.peerConnected);
+      }
+      state = state.addStep(ConnectionStep.keyExchange);
+
       if (state.isIncoming) {
         // Responder: send our public value + confirmation
         _connectionService.sendSpake2Pub(_spake2!.publicValueBase64);
@@ -338,6 +358,8 @@ class CallNotifier extends StateNotifier<CallState> {
 
     debugPrint('CallNotifier: SPAKE2 key confirmation verified ✓');
 
+    state = state.addStep(ConnectionStep.keyVerified);
+
     // Set the SPAKE2-derived session key on the encryption service
     _encryptionService.setSessionKey(_spake2!.sessionKey);
 
@@ -365,6 +387,13 @@ class CallNotifier extends StateNotifier<CallState> {
     _encryptionService.setCipher(settings.cipher);
 
     final isPake = _spake2 != null && _spake2!.isComplete;
+
+    if (!isPake) {
+      state = state
+          .addStep(ConnectionStep.keyExchange)
+          .addStep(ConnectionStep.keyVerified);
+    }
+    state = state.addStep(ConnectionStep.encrypted);
 
     state = state.copyWith(
       phase: CallPhase.active,
