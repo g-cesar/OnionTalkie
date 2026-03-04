@@ -419,6 +419,7 @@ class CallNotifier extends StateNotifier<CallState> {
       // Initiator: SPAKE2 complete → now send ID/CIPHER and go active
       final settings = _ref.read(settingsProvider);
       _sendIdAndGoActive(settings, pakeActive: true);
+      _checkEnableHmac();
     }
     // Responder: will receive ID next → normal active transition
   }
