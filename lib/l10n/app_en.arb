@@ -56,6 +56,8 @@
   "retry": "RETRY",
   "terminate": "TERMINATE",
   "connectionTimeout": "The connection is taking too long. It may have failed — try again or terminate and retry later.",
+  "retryingConnection": "Attempt {attempt} of {max} — retrying in {seconds}s…",
+  "@retryingConnection": { "placeholders": { "attempt": { "type": "int" }, "max": { "type": "int" }, "seconds": { "type": "int" } } },
 
   "contactsTitle": "Contacts",
   "addContact": "Add contact",
@@ -280,6 +282,15 @@
   "readyForCalls": "Ready for encrypted calls.",
   "torErrorBanner": "Tor Error",
   "torErrorDefault": "An error occurred.",
+
+  "propagationUnknown": "Checking service availability…",
+  "propagationChecking": "Verifying reachability on Tor network…",
+  "propagationReady": "Service propagated — ready for calls",
+  "propagationTimeout": "Propagation not confirmed — calls may still work",
+
+  "contactOnline": "Online",
+  "contactOffline": "Offline",
+  "contactChecking": "Checking…",
 
   "phaseIdle": "Idle",
   "phaseConnecting": "Connecting...",

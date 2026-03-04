@@ -7,6 +7,7 @@ import '../models/contact.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../providers/contacts_provider.dart';
+import '../providers/online_status_provider.dart';
 import '../providers/providers.dart';
 
 class DialScreen extends ConsumerStatefulWidget {
@@ -38,14 +39,13 @@ class _DialScreenState extends ConsumerState<DialScreen> {
     if (_formKey.currentState?.validate() ?? false) {
       final address = _sanitizeAddress(_controller.text);
       // Check if this address matches a contact
-      final contact =
-          ref.read(contactsProvider.notifier).findByOnion(address);
+      final contact = ref.read(contactsProvider.notifier).findByOnion(address);
       if (contact != null) {
         // Known contact — secret is loaded in CallScreen via contactId
-        context.push('/call', extra: {
-          'address': address,
-          'contactId': contact.id,
-        });
+        context.push(
+          '/call',
+          extra: {'address': address, 'contactId': contact.id},
+        );
       } else {
         // Unknown address — prompt for a one-time secret
         _showAdHocSecretDialog(address);
@@ -61,65 +61,67 @@ class _DialScreenState extends ConsumerState<DialScreen> {
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(S.of(ctx).secretDialogTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                S.of(ctx).secretDialogBody,
-                style: Theme.of(ctx).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: secretCtrl,
-                obscureText: obscure,
-                decoration: InputDecoration(
-                  labelText: S.of(ctx).secretDialogTitle,
-                  prefixIcon: const Icon(Icons.key, size: 20),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      obscure ? Icons.visibility : Icons.visibility_off,
-                      size: 20,
-                    ),
-                    onPressed: () =>
-                        setDialogState(() => obscure = !obscure),
+      builder:
+          (ctx) => StatefulBuilder(
+            builder:
+                (ctx, setDialogState) => AlertDialog(
+                  title: Text(S.of(ctx).secretDialogTitle),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        S.of(ctx).secretDialogBody,
+                        style: Theme.of(ctx).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: secretCtrl,
+                        obscureText: obscure,
+                        decoration: InputDecoration(
+                          labelText: S.of(ctx).secretDialogTitle,
+                          prefixIcon: const Icon(Icons.key, size: 20),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              obscure ? Icons.visibility : Icons.visibility_off,
+                              size: 20,
+                            ),
+                            onPressed:
+                                () => setDialogState(() => obscure = !obscure),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text(S.of(ctx).cancel),
+                    ),
+                    FilledButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        final secret = secretCtrl.text.trim();
+                        if (secret.isNotEmpty) {
+                          ref
+                              .read(encryptionServiceProvider)
+                              .setSharedSecret(secret);
+                        }
+                        context.push('/call', extra: address);
+                      },
+                      child: Text(S.of(ctx).dialTitle),
+                    ),
+                  ],
                 ),
-              ),
-            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(S.of(ctx).cancel),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                final secret = secretCtrl.text.trim();
-                if (secret.isNotEmpty) {
-                  ref
-                      .read(encryptionServiceProvider)
-                      .setSharedSecret(secret);
-                }
-                context.push('/call', extra: address);
-              },
-              child: Text(S.of(ctx).dialTitle),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
   void _callContact(Contact contact) {
-    context.push('/call', extra: {
-      'address': contact.onionAddress,
-      'contactId': contact.id,
-    });
+    context.push(
+      '/call',
+      extra: {'address': contact.onionAddress, 'contactId': contact.id},
+    );
   }
 
   @override
@@ -127,9 +129,7 @@ class _DialScreenState extends ConsumerState<DialScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(S.of(context).dialTitle),
-      ),
+      appBar: AppBar(title: Text(S.of(context).dialTitle)),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -189,7 +189,9 @@ class _DialScreenState extends ConsumerState<DialScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () async {
                       final result = await context.push<String>('/qr-scanner');
-                      if (result != null && result.isNotEmpty && context.mounted) {
+                      if (result != null &&
+                          result.isNotEmpty &&
+                          context.mounted) {
                         _controller.text = result;
                         _call();
                       }
@@ -243,40 +245,100 @@ class _QuickContacts extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 8),
-        ...contacts.map((c) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Material(
-                color: cs.surfaceContainer,
-                borderRadius: BorderRadius.circular(14),
-                clipBehavior: Clip.antiAlias,
-                child: ListTile(
-                  dense: true,
-                  leading: CircleAvatar(
-                    radius: 16,
-                    backgroundColor: cs.primary.withValues(alpha: 0.15),
-                    child: Text(
-                      c.alias.isNotEmpty ? c.alias[0].toUpperCase() : '?',
-                      style: TextStyle(
-                        color: cs.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
+        ...contacts.map((c) {
+          final onlineAsync = ref.watch(onlineStatusProvider(c.onionAddress));
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Material(
+              color: cs.surfaceContainer,
+              borderRadius: BorderRadius.circular(14),
+              clipBehavior: Clip.antiAlias,
+              child: ListTile(
+                dense: true,
+                leading: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    CircleAvatar(
+                      radius: 16,
+                      backgroundColor: cs.primary.withValues(alpha: 0.15),
+                      child: Text(
+                        c.alias.isNotEmpty ? c.alias[0].toUpperCase() : '?',
+                        style: TextStyle(
+                          color: cs.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
-                  ),
-                  title: Text(c.alias,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w600)),
-                  subtitle: Text(c.shortOnion,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontFamily: 'monospace',
-                        fontSize: 10,
-                        color: cs.onSurfaceVariant,
-                      )),
-                  trailing: Icon(Icons.call, size: 18, color: cs.primary),
-                  onTap: () => onSelectContact(c),
+                    // Online dot
+                    Positioned(
+                      bottom: -2,
+                      right: -2,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainer,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: onlineAsync.when(
+                          data:
+                              (online) => Container(
+                                width: 7,
+                                height: 7,
+                                decoration: BoxDecoration(
+                                  color:
+                                      online
+                                          ? const Color(
+                                            0xFF6BCB77,
+                                          ) // mint green
+                                          : Colors.grey.shade500,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                          loading:
+                              () => const SizedBox(
+                                width: 7,
+                                height: 7,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                ),
+                              ),
+                          error:
+                              (_, __) => Container(
+                                width: 7,
+                                height: 7,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade500,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+                title: Text(
+                  c.alias,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  c.shortOnion,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontFamily: 'monospace',
+                    fontSize: 10,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+                trailing: Icon(Icons.call, size: 18, color: cs.primary),
+                onTap: () => onSelectContact(c),
               ),
-            )),
+            ),
+          );
+        }),
       ],
     );
   }

@@ -110,69 +110,68 @@ class CircuitService {
 
   // ─── Control port helper ──────────────────────────────────────
 
-  /// Send a command and collect the response using the given [completer]
-  /// pattern.  Caller must call [_resetCompleter] first.
-  static late StringBuffer _buf;
-  static late Completer<String> _comp;
-
-  static void _resetCompleter() {
-    _buf = StringBuffer();
-    _comp = Completer<String>();
-  }
-
-  /// Send [command] through [socket], wait for a complete ControlPort
-  /// response and return it.
-  static Future<String> _sendCommand(Socket socket, String command) async {
-    _resetCompleter();
-    socket.write('$command\r\n');
-    await socket.flush();
-    return _comp.future.timeout(const Duration(seconds: 5));
-  }
-
   /// Query Tor ControlPort for the current circuit hops.
   ///
   /// Returns a list of [CircuitHop] with name, fingerprint, IP and
   /// country code — or null if unavailable.
   static Future<List<CircuitHop>?> getCircuitHops() async {
     Socket? socket;
+    final buf = StringBuffer();
+    Completer<String>? commandComp;
+
+    void resetComp() {
+      buf.clear();
+      commandComp = Completer<String>();
+    }
+
+    Future<String> sendCommand(Socket s, String cmd) async {
+      resetComp();
+      s.write('$cmd\r\n');
+      await s.flush();
+      return commandComp!.future.timeout(const Duration(seconds: 5));
+    }
+
     try {
       socket = await Socket.connect(
         '127.0.0.1',
         AppConstants.torControlPort,
       ).timeout(const Duration(seconds: 5));
 
-      _resetCompleter();
-
+      resetComp();
       socket.listen(
         (data) {
-          _buf.write(utf8.decode(data));
-          final content = _buf.toString();
+          buf.write(utf8.decode(data));
+          final content = buf.toString();
           // Tor ControlPort: a complete response always ends with
           // "250 OK\r\n" on success, or "4xx/5xx ...\r\n" on error.
-          // Previous heuristic was triggering on intermediate 250- lines
-          // of multi-line responses, causing premature completion.
           if (content.endsWith('250 OK\r\n') ||
               RegExp(r'[45]\d{2} .+\r\n$').hasMatch(content)) {
-            if (!_comp.isCompleted) _comp.complete(content);
+            if (commandComp != null && !commandComp!.isCompleted) {
+              commandComp!.complete(content);
+            }
           }
         },
         onError: (e) {
-          if (!_comp.isCompleted) _comp.completeError(e);
+          if (commandComp != null && !commandComp!.isCompleted) {
+            commandComp!.completeError(e);
+          }
         },
         onDone: () {
-          if (!_comp.isCompleted) _comp.complete(_buf.toString());
+          if (commandComp != null && !commandComp!.isCompleted) {
+            commandComp!.complete(buf.toString());
+          }
         },
       );
 
       // 1) Authenticate
-      final auth = await _sendCommand(socket, 'AUTHENTICATE');
+      final auth = await sendCommand(socket, 'AUTHENTICATE');
       if (!auth.contains('250 OK')) {
         debugPrint('CircuitService: Auth failed: $auth');
         return null;
       }
 
       // 2) Get circuit-status
-      final circuitResp = await _sendCommand(socket, 'GETINFO circuit-status');
+      final circuitResp = await sendCommand(socket, 'GETINFO circuit-status');
       final relays = _parseRelays(circuitResp);
       if (relays == null || relays.isEmpty) return null;
 
@@ -187,8 +186,10 @@ class CircuitService {
         // Try to get IP via ns/id
         String? ip;
         try {
-          final nsResp =
-              await _sendCommand(socket, 'GETINFO ns/id/$fingerprint');
+          final nsResp = await sendCommand(
+            socket,
+            'GETINFO ns/id/$fingerprint',
+          );
           ip = _parseIpFromNs(nsResp);
         } catch (_) {}
 
@@ -196,19 +197,23 @@ class CircuitService {
         String? cc;
         if (ip != null) {
           try {
-            final ccResp =
-                await _sendCommand(socket, 'GETINFO ip-to-country/$ip');
+            final ccResp = await sendCommand(
+              socket,
+              'GETINFO ip-to-country/$ip',
+            );
             cc = _parseCountryCode(ccResp);
           } catch (_) {}
         }
 
-        hops.add(CircuitHop(
-          role: role,
-          name: name,
-          fingerprint: fingerprint,
-          ip: ip,
-          countryCode: cc,
-        ));
+        hops.add(
+          CircuitHop(
+            role: role,
+            name: name,
+            fingerprint: fingerprint,
+            ip: ip,
+            countryCode: cc,
+          ),
+        );
       }
 
       return hops;
@@ -252,26 +257,22 @@ class CircuitService {
 
     if (matches.isEmpty) return null;
 
-    return [
-      for (final m in matches) (m.group(1)!, m.group(2) ?? 'Unknown'),
-    ];
+    return [for (final m in matches) (m.group(1)!, m.group(2) ?? 'Unknown')];
   }
 
   /// Extract the IP address from a `GETINFO ns/id/` response line.
   /// Typical line: `r RelayName <base64> <date> <time> 1.2.3.4 9001 0`
   static String? _parseIpFromNs(String response) {
     // The 'r' line contains: name identity date time ip orport dirport
-    final rLine = response.split('\n').firstWhere(
-          (l) => l.startsWith('r '),
-          orElse: () => '',
-        );
+    final rLine = response
+        .split('\n')
+        .firstWhere((l) => l.startsWith('r '), orElse: () => '');
     if (rLine.isEmpty) return null;
     final parts = rLine.split(RegExp(r'\s+'));
     // r <name> <identity> <digest> <date> <time> <ip> <orport> <dirport>
     if (parts.length >= 7) {
       final candidate = parts[6];
-      if (RegExp(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
-          .hasMatch(candidate)) {
+      if (RegExp(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$').hasMatch(candidate)) {
         return candidate;
       }
     }
@@ -281,7 +282,9 @@ class CircuitService {
   /// Parse the country code from `GETINFO ip-to-country/<ip>`.
   /// Response: `250-ip-to-country/1.2.3.4=de\r\n250 OK\r\n`
   static String? _parseCountryCode(String response) {
-    final match = RegExp(r'ip-to-country/[\d.]+=([\w]{2})').firstMatch(response);
+    final match = RegExp(
+      r'ip-to-country/[\d.]+=([\w]{2})',
+    ).firstMatch(response);
     return match?.group(1)?.toLowerCase();
   }
 
@@ -295,58 +298,110 @@ class CircuitService {
   static String getLocalizedCountryName(String code, dynamic l10n) {
     final lc = code.toLowerCase();
     switch (lc) {
-      case 'us': return l10n.countryUS;
-      case 'de': return l10n.countryDE;
-      case 'fr': return l10n.countryFR;
-      case 'nl': return l10n.countryNL;
-      case 'gb': return l10n.countryGB;
-      case 'ca': return l10n.countryCA;
-      case 'ch': return l10n.countryCH;
-      case 'se': return l10n.countrySE;
-      case 'no': return l10n.countryNO;
-      case 'fi': return l10n.countryFI;
-      case 'at': return l10n.countryAT;
-      case 'ro': return l10n.countryRO;
-      case 'is': return l10n.countryIS;
-      case 'lu': return l10n.countryLU;
-      case 'cz': return l10n.countryCZ;
-      case 'lt': return l10n.countryLT;
-      case 'md': return l10n.countryMD;
-      case 'bg': return l10n.countryBG;
-      case 'ua': return l10n.countryUA;
-      case 'ru': return l10n.countryRU;
-      case 'jp': return l10n.countryJP;
-      case 'sg': return l10n.countrySG;
-      case 'au': return l10n.countryAU;
-      case 'br': return l10n.countryBR;
-      case 'es': return l10n.countryES;
-      case 'it': return l10n.countryIT;
-      case 'pt': return l10n.countryPT;
-      case 'pl': return l10n.countryPL;
-      case 'hu': return l10n.countryHU;
-      case 'dk': return l10n.countryDK;
-      case 'ie': return l10n.countryIE;
-      case 'nz': return l10n.countryNZ;
-      case 'in': return l10n.countryIN;
-      case 'kr': return l10n.countryKR;
-      case 'za': return l10n.countryZA;
-      case 'mx': return l10n.countryMX;
-      case 'ar': return l10n.countryAR;
-      case 'cl': return l10n.countryCL;
-      case 'co': return l10n.countryCO;
-      case 'hk': return l10n.countryHK;
-      case 'tw': return l10n.countryTW;
-      case 'il': return l10n.countryIL;
-      case 'ae': return l10n.countryAE;
-      case 'tr': return l10n.countryTR;
-      case 'ee': return l10n.countryEE;
-      case 'lv': return l10n.countryLV;
-      case 'sk': return l10n.countrySK;
-      case 'si': return l10n.countrySI;
-      case 'hr': return l10n.countryHR;
-      case 'rs': return l10n.countryRS;
-      case 'be': return l10n.countryBE;
-      default: return code.toUpperCase();
+      case 'us':
+        return l10n.countryUS;
+      case 'de':
+        return l10n.countryDE;
+      case 'fr':
+        return l10n.countryFR;
+      case 'nl':
+        return l10n.countryNL;
+      case 'gb':
+        return l10n.countryGB;
+      case 'ca':
+        return l10n.countryCA;
+      case 'ch':
+        return l10n.countryCH;
+      case 'se':
+        return l10n.countrySE;
+      case 'no':
+        return l10n.countryNO;
+      case 'fi':
+        return l10n.countryFI;
+      case 'at':
+        return l10n.countryAT;
+      case 'ro':
+        return l10n.countryRO;
+      case 'is':
+        return l10n.countryIS;
+      case 'lu':
+        return l10n.countryLU;
+      case 'cz':
+        return l10n.countryCZ;
+      case 'lt':
+        return l10n.countryLT;
+      case 'md':
+        return l10n.countryMD;
+      case 'bg':
+        return l10n.countryBG;
+      case 'ua':
+        return l10n.countryUA;
+      case 'ru':
+        return l10n.countryRU;
+      case 'jp':
+        return l10n.countryJP;
+      case 'sg':
+        return l10n.countrySG;
+      case 'au':
+        return l10n.countryAU;
+      case 'br':
+        return l10n.countryBR;
+      case 'es':
+        return l10n.countryES;
+      case 'it':
+        return l10n.countryIT;
+      case 'pt':
+        return l10n.countryPT;
+      case 'pl':
+        return l10n.countryPL;
+      case 'hu':
+        return l10n.countryHU;
+      case 'dk':
+        return l10n.countryDK;
+      case 'ie':
+        return l10n.countryIE;
+      case 'nz':
+        return l10n.countryNZ;
+      case 'in':
+        return l10n.countryIN;
+      case 'kr':
+        return l10n.countryKR;
+      case 'za':
+        return l10n.countryZA;
+      case 'mx':
+        return l10n.countryMX;
+      case 'ar':
+        return l10n.countryAR;
+      case 'cl':
+        return l10n.countryCL;
+      case 'co':
+        return l10n.countryCO;
+      case 'hk':
+        return l10n.countryHK;
+      case 'tw':
+        return l10n.countryTW;
+      case 'il':
+        return l10n.countryIL;
+      case 'ae':
+        return l10n.countryAE;
+      case 'tr':
+        return l10n.countryTR;
+      case 'ee':
+        return l10n.countryEE;
+      case 'lv':
+        return l10n.countryLV;
+      case 'sk':
+        return l10n.countrySK;
+      case 'si':
+        return l10n.countrySI;
+      case 'hr':
+        return l10n.countryHR;
+      case 'rs':
+        return l10n.countryRS;
+      case 'be':
+        return l10n.countryBE;
+      default:
+        return code.toUpperCase();
     }
   }
 }

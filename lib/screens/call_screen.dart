@@ -41,7 +41,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   @override
   void initState() {
     super.initState();
-    try { WakelockPlus.enable(); } catch (_) {}
+    try {
+      WakelockPlus.enable();
+    } catch (_) {}
     // Defer call initialization to after the widget tree is built,
     // otherwise reset() would modify providers during the build phase.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -56,16 +58,22 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
     // If calling a contact, load their shared secret.
     if (widget.contactId != null) {
-      final contact =
-          ref.read(contactsProvider.notifier).findById(widget.contactId!);
+      final contact = ref
+          .read(contactsProvider.notifier)
+          .findById(widget.contactId!);
       if (contact != null && contact.hasSecret) {
-        ref.read(encryptionServiceProvider).setSharedSecret(contact.sharedSecret);
+        ref
+            .read(encryptionServiceProvider)
+            .setSharedSecret(contact.sharedSecret);
       }
     }
 
     if (widget.remoteAddress != null && widget.remoteAddress!.isNotEmpty) {
       // Outgoing call
-      await callNotifier.call(widget.remoteAddress!, contactId: widget.contactId);
+      await callNotifier.call(
+        widget.remoteAddress!,
+        contactId: widget.contactId,
+      );
     } else {
       // Incoming — listen mode
       await callNotifier.listenForCalls();
@@ -82,7 +90,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     _durationTimer?.cancel();
     _textController.dispose();
     _scrollController.dispose();
-    try { WakelockPlus.disable(); } catch (_) {}
+    try {
+      WakelockPlus.disable();
+    } catch (_) {}
     super.dispose();
   }
 
@@ -141,9 +151,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               CallHeader(callState: callState),
 
               // Main Content
-              Expanded(
-                child: _buildMainContent(callState, messages, theme),
-              ),
+              Expanded(child: _buildMainContent(callState, messages, theme)),
 
               // Bottom Controls
               if (callState.phase == CallPhase.active)
@@ -162,9 +170,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   ) {
     if (callState.phase == CallPhase.connecting) {
       // Determine if buttons should pulse (connection taking too long).
-      final elapsed = _connectingStartTime != null
-          ? DateTime.now().difference(_connectingStartTime!).inSeconds
-          : 0;
+      final elapsed =
+          _connectingStartTime != null
+              ? DateTime.now().difference(_connectingStartTime!).inSeconds
+              : 0;
       // Outgoing: 15s covers first retry cycle; listening: 30s.
       final threshold = callState.isIncoming ? 30 : 15;
       final shouldPulse = elapsed >= threshold;
@@ -182,8 +191,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
             isIncoming: callState.isIncoming,
           ),
           const SizedBox(height: 12),
-          if (shouldPulse)
-            _TimeoutAlertBox(),
+          // ── Retry message ──
+          if (callState.retryMessage != null)
+            _RetryMessageChip(raw: callState.retryMessage!),
+          if (shouldPulse) _TimeoutAlertBox(),
           _ConnectingActions(
             pulsing: shouldPulse,
             onRetry: _retry,
@@ -237,7 +248,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: theme.colorScheme.error,
+              ),
               const SizedBox(height: 16),
               Text(
                 S.of(context).connectionError,
@@ -268,7 +283,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.call_end, size: 64, color: AppColors.textSecondary),
+            const Icon(
+              Icons.call_end,
+              size: 64,
+              color: AppColors.textSecondary,
+            ),
             const SizedBox(height: 16),
             Text(S.of(context).callEnded),
           ],
@@ -304,9 +323,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: messages.length,
-      itemBuilder: (context, index) => ChatBubble(
-        message: messages[index],
-      ),
+      itemBuilder: (context, index) => ChatBubble(message: messages[index]),
     );
   }
 
@@ -360,11 +377,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.hearing,
-                    size: 16,
-                    color: theme.colorScheme.error,
-                  ),
+                  Icon(Icons.hearing, size: 16, color: theme.colorScheme.error),
                   const SizedBox(width: 6),
                   Text(
                     S.of(context).otherSpeaking,
@@ -397,8 +410,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 child: PttButton(
                   isRecording: callState.isRecording,
                   enabled: callState.remotePttState != RemotePttState.recording,
-                  onPttStart: () => ref.read(callProvider.notifier).startRecording(),
-                  onPttStop: () => ref.read(callProvider.notifier).stopRecording(),
+                  onPttStart:
+                      () => ref.read(callProvider.notifier).startRecording(),
+                  onPttStop:
+                      () => ref.read(callProvider.notifier).stopRecording(),
                 ),
               ),
 
@@ -420,7 +435,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     );
   }
 
-  Widget _buildStat(ThemeData theme, IconData icon, String value, String label) {
+  Widget _buildStat(
+    ThemeData theme,
+    IconData icon,
+    String value,
+    String label,
+  ) {
     return Column(
       children: [
         Row(
@@ -450,33 +470,34 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: 16,
-          right: 16,
-          top: 16,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _textController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: S.of(context).writeEncryptedMessage,
+      builder:
+          (context) => Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 16,
+              right: 16,
+              top: 16,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _textController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: S.of(context).writeEncryptedMessage,
+                    ),
+                    onSubmitted: (text) => _sendText(text),
+                  ),
                 ),
-                onSubmitted: (text) => _sendText(text),
-              ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  onPressed: () => _sendText(_textController.text),
+                  icon: const Icon(Icons.send),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            IconButton.filled(
-              onPressed: () => _sendText(_textController.text),
-              icon: const Icon(Icons.send),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -495,10 +516,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
     // Reload shared secret if needed.
     if (widget.contactId != null) {
-      final contact =
-          ref.read(contactsProvider.notifier).findById(widget.contactId!);
+      final contact = ref
+          .read(contactsProvider.notifier)
+          .findById(widget.contactId!);
       if (contact != null && contact.hasSecret) {
-        ref.read(encryptionServiceProvider).setSharedSecret(contact.sharedSecret);
+        ref
+            .read(encryptionServiceProvider)
+            .setSharedSecret(contact.sharedSecret);
       }
     }
 
@@ -517,24 +541,25 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   void _showHangUpConfirmation() {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(S.of(context).endCall),
-        content: Text(S.of(context).endCallConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(S.of(context).cancel),
+      builder:
+          (ctx) => AlertDialog(
+            title: Text(S.of(context).endCall),
+            content: Text(S.of(context).endCallConfirm),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(S.of(context).cancel),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ref.read(callProvider.notifier).hangUp();
+                  context.pop();
+                },
+                child: Text(S.of(context).end),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref.read(callProvider.notifier).hangUp();
-              context.pop();
-            },
-            child: Text(S.of(context).end),
-          ),
-        ],
-      ),
     );
   }
 
@@ -542,19 +567,20 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: Text(S.of(context).callEndedRemote),
-        content: Text(S.of(context).otherHungUp),
-        actions: [
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.pop();
-            },
-            child: const Text('OK'),
+      builder:
+          (ctx) => AlertDialog(
+            title: Text(S.of(context).callEndedRemote),
+            content: Text(S.of(context).otherHungUp),
+            actions: [
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -569,6 +595,71 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds % 60;
     return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+}
+
+// ─── Retry message chip ──────────────────────────────────────────
+
+/// Decodes the encoded retry message format from [CallState.retryMessage]
+/// and renders it as a small info chip.
+///
+/// The raw format is "retryingConnection:attempt:max:seconds".
+class _RetryMessageChip extends StatelessWidget {
+  final String raw;
+  const _RetryMessageChip({required this.raw});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    String message;
+    try {
+      final parts = raw.split(':');
+      if (parts.length == 4 && parts[0] == 'retryingConnection') {
+        final attempt = int.parse(parts[1]);
+        final max = int.parse(parts[2]);
+        final secs = int.parse(parts[3]);
+        message = S.of(context).retryingConnection(attempt, max, secs);
+      } else {
+        message = raw;
+      }
+    } catch (_) {
+      message = raw;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, left: 24, right: 24),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: cs.secondaryContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: cs.onSecondaryContainer,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: cs.onSecondaryContainer,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -678,18 +769,21 @@ class _PulsingActionButtonState extends State<_PulsingActionButton>
         return Transform.scale(
           scale: 1.0 + t * 0.03,
           child: Container(
-            decoration: widget.pulsing
-                ? BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: widget.color.withValues(alpha: 0.25 + t * 0.25),
-                        blurRadius: 8 + t * 12,
-                        spreadRadius: t * 2,
-                      ),
-                    ],
-                  )
-                : null,
+            decoration:
+                widget.pulsing
+                    ? BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: widget.color.withValues(
+                            alpha: 0.25 + t * 0.25,
+                          ),
+                          blurRadius: 8 + t * 12,
+                          spreadRadius: t * 2,
+                        ),
+                      ],
+                    )
+                    : null,
             child: child,
           ),
         );
@@ -732,9 +826,7 @@ class _TimeoutAlertBox extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.yellow.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: AppColors.yellow.withValues(alpha: 0.35),
-          ),
+          border: Border.all(color: AppColors.yellow.withValues(alpha: 0.35)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -752,9 +844,9 @@ class _TimeoutAlertBox extends StatelessWidget {
               child: Text(
                 S.of(context).connectionTimeout,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textPrimary.withValues(alpha: 0.85),
-                      height: 1.4,
-                    ),
+                  color: AppColors.textPrimary.withValues(alpha: 0.85),
+                  height: 1.4,
+                ),
               ),
             ),
           ],

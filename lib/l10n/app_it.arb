@@ -54,6 +54,8 @@
   "retry": "RIPROVA",
   "terminate": "TERMINA",
   "connectionTimeout": "La connessione sta impiegando troppo tempo. Potrebbe essere fallita — prova a riprovare oppure termina e riprova più tardi.",
+  "retryingConnection": "Tentativo {attempt} di {max} — riprovo tra {seconds}s…",
+  "@retryingConnection": { "placeholders": { "attempt": { "type": "int" }, "max": { "type": "int" }, "seconds": { "type": "int" } } },
 
   "contactsTitle": "Contatti",
   "addContact": "Aggiungi contatto",
@@ -272,6 +274,15 @@
   "readyForCalls": "Pronto per chiamate cifrate.",
   "torErrorBanner": "Errore Tor",
   "torErrorDefault": "Si è verificato un errore.",
+
+  "propagationUnknown": "Verifica disponibilità del servizio…",
+  "propagationChecking": "Verifica raggiungibilità sulla rete Tor…",
+  "propagationReady": "Servizio propagato — pronto per le chiamate",
+  "propagationTimeout": "Propagazione non confermata — le chiamate potrebbero funzionare ugualmente",
+
+  "contactOnline": "Online",
+  "contactOffline": "Offline",
+  "contactChecking": "Verifica…",
 
   "phaseIdle": "Inattivo",
   "phaseConnecting": "Connessione...",

@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/tor_status.dart';
 import '../services/tor_service.dart';
 
-
 /// Provider for the TorService instance.
 final torServiceProvider = Provider<TorServiceBase>((ref) {
   final service = createTorService();
@@ -58,7 +57,10 @@ class TorNotifier extends StateNotifier<TorStatus> {
     await _torService.stop();
   }
 
-  Future<void> restart({bool snowflake = false, String excludeNodes = ''}) async {
+  Future<void> restart({
+    bool snowflake = false,
+    String excludeNodes = '',
+  }) async {
     await _torService.restart(snowflake: snowflake, excludeNodes: excludeNodes);
   }
 
@@ -87,6 +89,24 @@ class TorNotifier extends StateNotifier<TorStatus> {
     }
   }
 
+  /// Manually trigger a hidden-service propagation check.
+  /// Updates [state.propagationState] accordingly.
+  Future<bool> checkHsPropagation() async {
+    try {
+      if (state.state != TorConnectionState.connected) return false;
+      state = state.copyWith(propagationState: HsPropagationState.checking);
+      final ok = await _torService.checkHsPropagation();
+      state = state.copyWith(
+        propagationState:
+            ok ? HsPropagationState.ready : HsPropagationState.timeout,
+      );
+      return ok;
+    } catch (e) {
+      debugPrint('TorNotifier: propagation check error: $e');
+      return false;
+    }
+  }
+
   /// Start periodic circuit path refresh (every 60 seconds).
   void _startCircuitRefreshTimer() {
     _circuitTimer?.cancel();
@@ -110,5 +130,3 @@ final torProvider = StateNotifierProvider<TorNotifier, TorStatus>((ref) {
   final service = ref.watch(torServiceProvider);
   return TorNotifier(service);
 });
-
-

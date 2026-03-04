@@ -1,6 +1,5 @@
 import 'dart:async';
 
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -57,10 +56,7 @@ class CallNotifier extends StateNotifier<CallState> {
 
   /// Start listening for incoming calls.
   Future<void> listenForCalls() async {
-    state = state.copyWith(
-      phase: CallPhase.connecting,
-      isIncoming: true,
-    );
+    state = state.copyWith(phase: CallPhase.connecting, isIncoming: true);
 
     // Start foreground service so the OS keeps the app alive in background
     await ForegroundListenService.startListening();
@@ -89,29 +85,49 @@ class CallNotifier extends StateNotifier<CallState> {
       phase: CallPhase.connecting,
       remoteAddress: onionAddress,
       isIncoming: false,
+      clearRetryMessage: true,
+      retryAttempt: 0,
     );
 
     try {
       final settings = _ref.read(settingsProvider);
 
-      // Tor circuits are inherently unreliable — retry up to 3 times with
-      // increasing back-off to dramatically improve connection success rate.
-      const maxAttempts = 3;
+      // Tor circuits are inherently unreliable — retry up to 8 times with
+      // exponential back-off and jitter.  This dramatically improves success
+      // when the remote hidden service hasn't fully propagated yet.
+      const maxAttempts = 8;
       for (int attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
           debugPrint(
             'CallNotifier: connection attempt $attempt/$maxAttempts '
             'to $onionAddress',
           );
+          state = state.copyWith(retryAttempt: attempt);
           await _connectionService.connect(onionAddress);
-          break; // success
+          // Success — clear retry message
+          state = state.copyWith(clearRetryMessage: true, retryAttempt: 0);
+          break;
         } catch (e) {
           if (attempt == maxAttempts) rethrow;
+
+          // Exponential back-off: 2^attempt seconds, capped at 30 s,
+          // plus small jitter to de-synchronise concurrent callers.
+          final baseDelay = (1 << attempt).clamp(2, 30);
+          final jitter = DateTime.now().millisecond % 4; // 0-3 s
+          final delaySeconds = baseDelay + jitter;
+
           debugPrint(
-            'CallNotifier: attempt $attempt failed ($e), retrying '
-            'in ${2 * attempt}s…',
+            'CallNotifier: attempt $attempt failed ($e), '
+            'retrying in ${delaySeconds}s…',
           );
-          await Future.delayed(Duration(seconds: 2 * attempt));
+
+          // Encode retry info into retryMessage for the UI to localise
+          state = state.copyWith(
+            retryMessage:
+                'retryingConnection:$attempt:$maxAttempts:$delaySeconds',
+          );
+
+          await Future.delayed(Duration(seconds: delaySeconds));
           // Ensure clean state before next attempt
           await _connectionService.disconnect();
         }
@@ -141,6 +157,7 @@ class CallNotifier extends StateNotifier<CallState> {
       state = state.copyWith(
         phase: CallPhase.error,
         errorMessage: 'Failed to connect: $e',
+        clearRetryMessage: true,
       );
     }
   }
@@ -291,7 +308,9 @@ class CallNotifier extends StateNotifier<CallState> {
         _activeContactId = contact.id;
         if (contact.hasSecret) {
           _encryptionService.setSharedSecret(contact.sharedSecret);
-          debugPrint('CallNotifier: loaded secret for contact "${contact.alias}"');
+          debugPrint(
+            'CallNotifier: loaded secret for contact "${contact.alias}"',
+          );
         }
         return;
       }
@@ -300,7 +319,8 @@ class CallNotifier extends StateNotifier<CallState> {
       final prev = contactsNotifier.findByPreviousOnion(peerOnion);
       if (prev != null) {
         debugPrint(
-            'CallNotifier: incoming from PREVIOUS onion of "${prev.alias}" — address change detected');
+          'CallNotifier: incoming from PREVIOUS onion of "${prev.alias}" — address change detected',
+        );
       }
     } catch (_) {
       // contacts provider may not be initialised in tests — ignore
@@ -439,16 +459,19 @@ class CallNotifier extends StateNotifier<CallState> {
     _streamingReady = Completer<void>();
 
     // Start streaming playback asynchronously; complete the gate once ready.
-    _audioService.startStreamingPlayback().then((_) {
-      if (_streamingReady != null && !_streamingReady!.isCompleted) {
-        _streamingReady!.complete();
-      }
-    }).catchError((e) {
-      debugPrint('CallNotifier: startStreamingPlayback error: $e');
-      if (_streamingReady != null && !_streamingReady!.isCompleted) {
-        _streamingReady!.completeError(e);
-      }
-    });
+    _audioService
+        .startStreamingPlayback()
+        .then((_) {
+          if (_streamingReady != null && !_streamingReady!.isCompleted) {
+            _streamingReady!.complete();
+          }
+        })
+        .catchError((e) {
+          debugPrint('CallNotifier: startStreamingPlayback error: $e');
+          if (_streamingReady != null && !_streamingReady!.isCompleted) {
+            _streamingReady!.completeError(e);
+          }
+        });
 
     debugPrint('CallNotifier: Remote PTT started — streaming playback opening');
   }
@@ -489,7 +512,9 @@ class CallNotifier extends StateNotifier<CallState> {
           await _streamingReady!.future.timeout(
             const Duration(seconds: 3),
             onTimeout: () {
-              debugPrint('CallNotifier: Streaming ready timeout — feeding anyway');
+              debugPrint(
+                'CallNotifier: Streaming ready timeout — feeding anyway',
+              );
             },
           );
         }
@@ -595,9 +620,7 @@ class CallNotifier extends StateNotifier<CallState> {
       final encrypted = _encryptionService.encrypt(audioData);
       _connectionService.sendAudio(encrypted);
 
-      state = state.copyWith(
-        sentBytes: state.sentBytes + encrypted.length,
-      );
+      state = state.copyWith(sentBytes: state.sentBytes + encrypted.length);
     } catch (e) {
       debugPrint('CallNotifier: Failed to send audio chunk: $e');
     }
@@ -687,14 +710,11 @@ class CallNotifier extends StateNotifier<CallState> {
   /// Start the ping keepalive timer.
   void _startPingTimer() {
     _pingTimer?.cancel();
-    _pingTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) {
-        if (_connectionService.isConnected) {
-          _connectionService.sendPing();
-        }
-      },
-    );
+    _pingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (_connectionService.isConnected) {
+        _connectionService.sendPing();
+      }
+    });
   }
 
   /// Clean up resources after call ends.

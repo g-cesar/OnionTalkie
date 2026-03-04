@@ -15,38 +15,29 @@ class TorSettingsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(S.of(context).torSettingsTitle),
-      ),
+      appBar: AppBar(title: Text(S.of(context).torSettingsTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Snowflake Bridge
-          SwitchListTile(
-            secondary: const Icon(Icons.ac_unit),
-            title: Text(S.of(context).snowflakeBridge),
-            subtitle: Text(
-              S.of(context).snowflakeBridgeSubtitle,
+          // Snowflake Bridge (Native only, relay-side on Web)
+          if (!kIsWeb)
+            SwitchListTile(
+              secondary: const Icon(Icons.ac_unit),
+              title: Text(S.of(context).snowflakeBridge),
+              subtitle: Text(S.of(context).snowflakeBridgeSubtitle),
+              value: settings.snowflakeEnabled,
+              onChanged: (value) {
+                ref.read(settingsProvider.notifier).setSnowflakeEnabled(value);
+              },
             ),
-            value: settings.snowflakeEnabled,
-            onChanged: (value) {
-              ref.read(settingsProvider.notifier).setSnowflakeEnabled(value);
-            },
-          ),
 
           const Divider(height: 24),
 
-          // The options below require a local Tor instance with a
-          // ControlPort — not available on web.
-          if (!kIsWeb) ...[
-
-          // Show Circuit Path
+          // Show Circuit Path (Supported on all platforms now)
           SwitchListTile(
             secondary: const Icon(Icons.route),
             title: Text(S.of(context).showCircuitPath),
-            subtitle: Text(
-              S.of(context).showCircuitPathSubtitle,
-            ),
+            subtitle: Text(S.of(context).showCircuitPathSubtitle),
             value: settings.showCircuitPath,
             onChanged: (value) {
               ref.read(settingsProvider.notifier).setShowCircuitPath(value);
@@ -60,7 +51,9 @@ class TorSettingsScreen extends ConsumerWidget {
               leading: const Icon(Icons.timer_outlined),
               title: Text(S.of(context).refreshInterval),
               subtitle: Text(
-                S.of(context).circuitRefreshLabel(settings.circuitRefreshSeconds),
+                S
+                    .of(context)
+                    .circuitRefreshLabel(settings.circuitRefreshSeconds),
               ),
               trailing: DropdownButton<int>(
                 value: settings.circuitRefreshSeconds,
@@ -85,106 +78,110 @@ class TorSettingsScreen extends ConsumerWidget {
 
           const Divider(height: 24),
 
-          // Exclude Countries
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              S.of(context).excludeCountries,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
+          // The options below require a local Tor instance with a
+          // ControlPort — not available on web.
+          if (!kIsWeb) ...[
+            // Exclude Countries
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                S.of(context).excludeCountries,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              S.of(context).excludeCountriesHint,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                S.of(context).excludeCountriesHint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-          // Preset buttons
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _buildPresetChip(
-                  context,
-                  ref,
-                  'Five Eyes',
-                  '{US},{GB},{CA},{AU},{NZ}',
-                  settings.excludeNodes,
-                ),
-                _buildPresetChip(
-                  context,
-                  ref,
-                  'Nine Eyes',
-                  '{US},{GB},{CA},{AU},{NZ},{DK},{FR},{NL},{NO}',
-                  settings.excludeNodes,
-                ),
-                _buildPresetChip(
-                  context,
-                  ref,
-                  'Fourteen Eyes',
-                  '{US},{GB},{CA},{AU},{NZ},{DK},{FR},{NL},{NO},{DE},{BE},{IT},{SE},{ES}',
-                  settings.excludeNodes,
-                ),
-                ActionChip(
-                  label: Text(S.of(context).none),
-                  onPressed: () {
-                    ref.read(settingsProvider.notifier).setExcludeNodes('');
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Custom country codes
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextFormField(
-              initialValue: settings.excludeNodes,
-              decoration: InputDecoration(
-                labelText: S.of(context).customCountryCodes,
-                hintText: '{US},{GB},{DE}',
-                helperText: S.of(context).countryCodeFormat,
+            // Preset buttons
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _buildPresetChip(
+                    context,
+                    ref,
+                    'Five Eyes',
+                    '{US},{GB},{CA},{AU},{NZ}',
+                    settings.excludeNodes,
+                  ),
+                  _buildPresetChip(
+                    context,
+                    ref,
+                    'Nine Eyes',
+                    '{US},{GB},{CA},{AU},{NZ},{DK},{FR},{NL},{NO}',
+                    settings.excludeNodes,
+                  ),
+                  _buildPresetChip(
+                    context,
+                    ref,
+                    'Fourteen Eyes',
+                    '{US},{GB},{CA},{AU},{NZ},{DK},{FR},{NL},{NO},{DE},{BE},{IT},{SE},{ES}',
+                    settings.excludeNodes,
+                  ),
+                  ActionChip(
+                    label: Text(S.of(context).none),
+                    onPressed: () {
+                      ref.read(settingsProvider.notifier).setExcludeNodes('');
+                    },
+                  ),
+                ],
               ),
-              onFieldSubmitted: (value) {
-                ref.read(settingsProvider.notifier).setExcludeNodes(value);
-              },
             ),
-          ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-          // Restart Tor button
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: OutlinedButton.icon(
-              onPressed: () {
-                ref.read(torProvider.notifier).restart(
-                  snowflake: settings.snowflakeEnabled,
-                  excludeNodes: settings.excludeNodes,
-                );
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(S.of(context).torRestarting)),
-                );
-              },
-              icon: const Icon(Icons.refresh),
-              label: Text(S.of(context).restartTor),
+            // Custom country codes
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextFormField(
+                initialValue: settings.excludeNodes,
+                decoration: InputDecoration(
+                  labelText: S.of(context).customCountryCodes,
+                  hintText: '{US},{GB},{DE}',
+                  helperText: S.of(context).countryCodeFormat,
+                ),
+                onFieldSubmitted: (value) {
+                  ref.read(settingsProvider.notifier).setExcludeNodes(value);
+                },
+              ),
             ),
-          ),
 
-          const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
+            // Restart Tor button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  ref
+                      .read(torProvider.notifier)
+                      .restart(
+                        snowflake: settings.snowflakeEnabled,
+                        excludeNodes: settings.excludeNodes,
+                      );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(S.of(context).torRestarting)),
+                  );
+                },
+                icon: const Icon(Icons.refresh),
+                label: Text(S.of(context).restartTor),
+              ),
+            ),
+
+            const SizedBox(height: 32),
           ], // end !kIsWeb
         ],
       ),

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/tor_status.dart';
+import 'circuit_service.dart';
 
 /// Information about a Tor installation option.
 class TorInstallOption {
@@ -61,6 +62,23 @@ abstract class TorServiceBase {
   /// Returns a human-readable string like "Guard: Name → Relay: Name → Exit: Name"
   /// or null if unavailable.
   Future<String?> getCircuitPath();
+
+  /// Get structured Tor circuit hops (role, name, flag, etc).
+  Future<List<CircuitHop>?> getCircuitHops();
+
+  /// Check whether the local hidden service is reachable from the Tor network
+  /// (i.e. introduction points have fully propagated).
+  ///
+  /// Returns `true` when the HS is dialable, `false` on error/timeout.
+  Future<bool> checkHsPropagation();
+
+  /// Wait for the HS to propagate, polling [checkHsPropagation].
+  Future<bool> waitForHsPropagation({
+    Duration timeout = const Duration(minutes: 5),
+  });
+
+  /// Check if a peer's onion address is currently reachable.
+  Future<bool> isPeerOnline(String onionAddress);
 
   void dispose();
 }

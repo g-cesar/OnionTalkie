@@ -1,18 +1,8 @@
 /// State of an active call.
-enum CallPhase {
-  idle,
-  connecting,
-  ringing,
-  active,
-  ended,
-  error,
-}
+enum CallPhase { idle, connecting, ringing, active, ended, error }
 
 /// Remote party PTT state.
-enum RemotePttState {
-  idle,
-  recording,
-}
+enum RemotePttState { idle, recording }
 
 /// Discrete step in the connection establishment process.
 /// Used by [ConnectionStepsWidget] to show visual progress.
@@ -42,6 +32,12 @@ class CallState {
   final bool pakeActive;
   final Set<ConnectionStep> completedSteps;
 
+  /// Human-readable message shown during connection retry (e.g. "Attempt 2/8").
+  final String? retryMessage;
+
+  /// Current retry attempt number (0 = no retry in progress).
+  final int retryAttempt;
+
   const CallState({
     this.phase = CallPhase.idle,
     this.remoteAddress,
@@ -58,6 +54,8 @@ class CallState {
     this.hmacEnabled = false,
     this.pakeActive = false,
     this.completedSteps = const {},
+    this.retryMessage,
+    this.retryAttempt = 0,
   });
 
   bool get ciphersMatch =>
@@ -91,6 +89,9 @@ class CallState {
     bool? hmacEnabled,
     bool? pakeActive,
     Set<ConnectionStep>? completedSteps,
+    String? retryMessage,
+    bool clearRetryMessage = false,
+    int? retryAttempt,
   }) {
     return CallState(
       phase: phase ?? this.phase,
@@ -108,6 +109,9 @@ class CallState {
       hmacEnabled: hmacEnabled ?? this.hmacEnabled,
       pakeActive: pakeActive ?? this.pakeActive,
       completedSteps: completedSteps ?? this.completedSteps,
+      retryMessage:
+          clearRetryMessage ? null : (retryMessage ?? this.retryMessage),
+      retryAttempt: retryAttempt ?? this.retryAttempt,
     );
   }
 }

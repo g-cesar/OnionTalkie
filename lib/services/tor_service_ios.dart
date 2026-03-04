@@ -11,11 +11,9 @@ import '../models/tor_status.dart';
 import 'hidden_service_probe.dart';
 import 'tor_service_base.dart';
 import 'circuit_service.dart';
-import 'tor_service_ios.dart';
 
-/// Native implementation of TorService using local Tor process.
-class TorServiceNative extends TorServiceBase {
-  Process? _torProcess;
+/// iOS implementation of TorService using Tor.framework via MethodChannel.
+class TorServiceIos extends TorServiceBase {
   TorStatus _status = const TorStatus();
   final _statusController = StreamController<TorStatus>.broadcast();
   Timer? _bootstrapTimer;
@@ -31,11 +29,9 @@ class TorServiceNative extends TorServiceBase {
 
   // ─── Tor installation helpers ──────────────────────────────────────
 
-  /// Check if a Tor binary is available on the device.
+  /// Tor.framework is bundled statically on iOS, so it is always installed.
   @override
-  Future<bool> isTorInstalled() async {
-    return (await _findTorBinary()) != null;
-  }
+  Future<bool> isTorInstalled() async => true;
 
   /// Return platform-specific installation options for the user.
   @override
@@ -216,42 +212,17 @@ class TorServiceNative extends TorServiceBase {
         excludeNodes: excludeNodes,
       );
 
-      // Find tor binary — on mobile it will be bundled in the app's native libs
-      final torBinary = await _findTorBinary();
-      if (torBinary == null) {
-        _updateStatus(
-          _status.copyWith(
-            state: TorConnectionState.notInstalled,
-            errorMessage: 'Tor client not found. Install Tor to continue.',
-          ),
-        );
-        return;
-      }
-
-      _torProcess = await Process.start(torBinary, ['-f', torrcPath]);
+      // Invoke native iOS MethodChannel to start Tor.framework thread
+      const channel = MethodChannel('onion_talkie/tor_ios');
+      await channel.invokeMethod('start', {'torrcPath': torrcPath});
 
       _updateStatus(_status.copyWith(state: TorConnectionState.bootstrapping));
 
-      // Monitor Tor output for bootstrap progress (works on desktop where
-      // stdout is available).
-      _torProcess!.stdout.transform(utf8.decoder).listen(_parseTorOutput);
-      _torProcess!.stderr.transform(utf8.decoder).listen(_parseTorOutput);
-
-      // On Android, Tor may not send bootstrap messages to stdout even with
-      // "Log notice stdout" in torrc. Poll the ControlPort as a fallback to
-      // reliably track bootstrap progress on all platforms.
+      // On iOS, Tor does not output to stdout in a way Dart can read.
+      // We rely completely on polling the ControlPort to track bootstrap progress.
       _startBootstrapPolling();
 
-      _torProcess!.exitCode.then((code) {
-        if (_status.state != TorConnectionState.stopped) {
-          _updateStatus(
-            _status.copyWith(
-              state: TorConnectionState.error,
-              errorMessage: 'Tor process exited with code $code',
-            ),
-          );
-        }
-      });
+      // No native process exit code to listen to on iOS, TorThread is managed by the OS.
 
       // Set a bootstrap timeout
       final isFirstBoot = !await _hasConsensusCache();
@@ -283,13 +254,17 @@ class TorServiceNative extends TorServiceBase {
     }
   }
 
-  /// Stop the Tor process.
   @override
   Future<void> stop() async {
     _bootstrapTimer?.cancel();
     _bootstrapPollTimer?.cancel();
-    _torProcess?.kill();
-    _torProcess = null;
+    _propagationTimer?.cancel();
+
+    try {
+      const channel = MethodChannel('onion_talkie/tor_ios');
+      await channel.invokeMethod('stop');
+    } catch (_) {}
+
     _updateStatus(const TorStatus(state: TorConnectionState.stopped));
   }
 
@@ -337,24 +312,7 @@ class TorServiceNative extends TorServiceBase {
   @override
   Future<List<CircuitHop>?> getCircuitHops() => CircuitService.getCircuitHops();
 
-  /// Parse Tor output to track bootstrap progress.
-  void _parseTorOutput(String output) {
-    for (final line in output.split('\n')) {
-      // Parse bootstrap progress: "Bootstrapped XX%"
-      final bootstrapMatch = RegExp(r'Bootstrapped (\d+)%').firstMatch(line);
-      if (bootstrapMatch != null) {
-        final progress = int.parse(bootstrapMatch.group(1)!);
-        _handleBootstrapProgress(progress);
-      }
-
-      // Check for errors
-      if (line.contains('[err]') || line.contains('[warn]')) {
-        debugPrint('Tor: $line');
-      }
-    }
-  }
-
-  /// Handle a bootstrap progress update from any source (stdout or poll).
+  /// Handle a bootstrap progress update from any source (poll).
   void _handleBootstrapProgress(int progress) {
     if (progress <= _status.bootstrapProgress) return; // avoid regressions
     _updateStatus(_status.copyWith(bootstrapProgress: progress));
@@ -557,66 +515,6 @@ class TorServiceNative extends TorServiceBase {
     return cacheFile.exists();
   }
 
-  /// Platform channel per ottenere il percorso nativeLibraryDir su Android.
-  static const _nativeChannel = MethodChannel('com.oniontalkie/native_info');
-
-  /// Find the Tor binary on the system.
-  Future<String?> _findTorBinary() async {
-    // On Android, the Tor binary is bundled as libtor.so in jniLibs
-    // and extracted to nativeLibraryDir at install time.
-    if (Platform.isAndroid) {
-      try {
-        final nativeLibDir = await _nativeChannel.invokeMethod<String>(
-          'getNativeLibraryDir',
-        );
-        if (nativeLibDir != null) {
-          final bundledTor = File('$nativeLibDir/libtor.so');
-          if (await bundledTor.exists()) {
-            debugPrint(
-              'TorServiceNative: found bundled tor at ${bundledTor.path}',
-            );
-            return bundledTor.path;
-          }
-        }
-      } catch (e) {
-        debugPrint('TorServiceNative: platform channel error: $e');
-      }
-
-      // Fallback: check legacy paths
-      final appDir = await getApplicationDocumentsDirectory();
-      final legacyPaths = [
-        '${appDir.parent.path}/lib/libtor.so',
-        '${appDir.path}/tor',
-      ];
-      for (final path in legacyPaths) {
-        if (await File(path).exists()) return path;
-      }
-
-      return null;
-    }
-
-    // Desktop: check common system paths
-    final paths = [
-      '/usr/bin/tor',
-      '/usr/local/bin/tor',
-      '/opt/homebrew/bin/tor',
-    ];
-
-    for (final path in paths) {
-      if (await File(path).exists()) return path;
-    }
-
-    // Try `which tor`
-    try {
-      final result = await Process.run('which', ['tor']);
-      if (result.exitCode == 0) {
-        return (result.stdout as String).trim();
-      }
-    } catch (_) {}
-
-    return null;
-  }
-
   void _updateStatus(TorStatus newStatus) {
     _status = newStatus;
     _statusController.add(newStatus);
@@ -627,14 +525,12 @@ class TorServiceNative extends TorServiceBase {
     _bootstrapTimer?.cancel();
     _bootstrapPollTimer?.cancel();
     _propagationTimer?.cancel();
-    _torProcess?.kill();
+    try {
+      const channel = MethodChannel('onion_talkie/tor_ios');
+      channel.invokeMethod('stop');
+    } catch (_) {}
     _statusController.close();
   }
 }
 
-TorServiceBase createTorService() {
-  if (Platform.isIOS) {
-    return TorServiceIos();
-  }
-  return TorServiceNative();
-}
+TorServiceBase createTorService() => TorServiceIos();

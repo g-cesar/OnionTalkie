@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../core/theme/app_theme.dart';
 import '../models/contact.dart';
 import '../providers/contacts_provider.dart';
+import '../providers/online_status_provider.dart';
 import '../providers/tor_provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -18,27 +19,30 @@ class ContactsScreen extends ConsumerWidget {
     final torStatus = ref.watch(torProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(S.of(context).contactsTitle),
-      ),
-      body: contacts.isEmpty
-          ? _buildEmptyState(context)
-          : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: contacts.length,
-              itemBuilder: (context, index) {
-                final contact = contacts[index];
-                return _ContactTile(
-                  contact: contact,
-                  torReady: torStatus.isReady,
-                  onCall: torStatus.isReady
-                      ? () => _callContact(context, ref, contact)
-                      : null,
-                  onTap: () =>
-                      context.push('/contacts/edit', extra: contact.id),
-                );
-              },
-            ),
+      appBar: AppBar(title: Text(S.of(context).contactsTitle)),
+      body:
+          contacts.isEmpty
+              ? _buildEmptyState(context)
+              : ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                itemCount: contacts.length,
+                itemBuilder: (context, index) {
+                  final contact = contacts[index];
+                  return _ContactTile(
+                    contact: contact,
+                    torReady: torStatus.isReady,
+                    onCall:
+                        torStatus.isReady
+                            ? () => _callContact(context, ref, contact)
+                            : null,
+                    onTap:
+                        () => context.push('/contacts/edit', extra: contact.id),
+                  );
+                },
+              ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/contacts/add'),
         backgroundColor: AppColors.yellow,
@@ -57,8 +61,11 @@ class ContactsScreen extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.contacts_outlined,
-                size: 80, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+            Icon(
+              Icons.contacts_outlined,
+              size: 80,
+              color: cs.onSurfaceVariant.withValues(alpha: 0.3),
+            ),
             const SizedBox(height: 24),
             Text(
               S.of(context).noContacts,
@@ -81,17 +88,16 @@ class ContactsScreen extends ConsumerWidget {
   }
 
   void _callContact(BuildContext context, WidgetRef ref, Contact contact) {
-    // Load the contact's shared secret into EncryptionService, then call.
-    context.push('/call', extra: {
-      'address': contact.onionAddress,
-      'contactId': contact.id,
-    });
+    context.push(
+      '/call',
+      extra: {'address': contact.onionAddress, 'contactId': contact.id},
+    );
   }
 }
 
 // ── Contact list tile ──────────────────────────────────────────────
 
-class _ContactTile extends StatelessWidget {
+class _ContactTile extends ConsumerWidget {
   final Contact contact;
   final bool torReady;
   final VoidCallback? onCall;
@@ -105,9 +111,13 @@ class _ContactTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+
+    // Only probe online status when Tor is ready
+    final onlineAsync =
+        torReady ? ref.watch(onlineStatusProvider(contact.onionAddress)) : null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -121,8 +131,19 @@ class _ContactTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                // Avatar
-                _buildAvatar(cs),
+                // Avatar with online dot
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    _buildAvatar(cs),
+                    if (torReady)
+                      Positioned(
+                        bottom: -2,
+                        right: -2,
+                        child: _OnlineDot(asyncValue: onlineAsync),
+                      ),
+                  ],
+                ),
                 const SizedBox(width: 14),
 
                 // Name + onion
@@ -146,8 +167,11 @@ class _ContactTile extends StatelessWidget {
                               padding: const EdgeInsets.only(left: 6),
                               child: Tooltip(
                                 message: S.of(context).onionAddressChanged,
-                                child: Icon(Icons.warning_amber_rounded,
-                                    size: 18, color: AppColors.coral),
+                                child: Icon(
+                                  Icons.warning_amber_rounded,
+                                  size: 18,
+                                  color: AppColors.coral,
+                                ),
                               ),
                             ),
                           if (!contact.hasSecret)
@@ -155,10 +179,13 @@ class _ContactTile extends StatelessWidget {
                               padding: const EdgeInsets.only(left: 6),
                               child: Tooltip(
                                 message: S.of(context).noSharedSecret,
-                                child: Icon(Icons.key_off,
-                                    size: 16,
-                                    color: cs.onSurfaceVariant
-                                        .withValues(alpha: 0.5)),
+                                child: Icon(
+                                  Icons.key_off,
+                                  size: 16,
+                                  color: cs.onSurfaceVariant.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
                               ),
                             ),
                         ],
@@ -177,7 +204,14 @@ class _ContactTile extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.only(top: 2),
                           child: Text(
-                            S.of(context).lastContact(_formatDate(context, contact.lastContactedAt!)),
+                            S
+                                .of(context)
+                                .lastContact(
+                                  _formatDate(
+                                    context,
+                                    contact.lastContactedAt!,
+                                  ),
+                                ),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: cs.onSurfaceVariant.withValues(alpha: 0.5),
                               fontSize: 10,
@@ -207,9 +241,8 @@ class _ContactTile extends StatelessWidget {
   }
 
   Widget _buildAvatar(ColorScheme cs) {
-    final initials = contact.alias.isNotEmpty
-        ? contact.alias[0].toUpperCase()
-        : '?';
+    final initials =
+        contact.alias.isNotEmpty ? contact.alias[0].toUpperCase() : '?';
     return Container(
       width: 44,
       height: 44,
@@ -237,5 +270,61 @@ class _ContactTile extends StatelessWidget {
     if (diff.inDays < 1) return S.of(context).timeHoursAgo(diff.inHours);
     if (diff.inDays < 7) return S.of(context).timeDaysAgo(diff.inDays);
     return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+// ── Online status dot ──────────────────────────────────────────────
+
+/// Small coloured dot that indicates whether a peer is online.
+/// - Loading → small grey spinner
+/// - Online  → green dot
+/// - Offline → grey dot
+class _OnlineDot extends StatelessWidget {
+  final AsyncValue<bool>? asyncValue;
+  const _OnlineDot({this.asyncValue});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: _dot(),
+    );
+  }
+
+  Widget _dot() {
+    if (asyncValue == null) return const SizedBox.shrink();
+
+    return asyncValue!.when(
+      data:
+          (isOnline) => Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: isOnline ? AppColors.mint : Colors.grey.shade500,
+              shape: BoxShape.circle,
+            ),
+          ),
+      loading:
+          () => const SizedBox(
+            width: 8,
+            height: 8,
+            child: CircularProgressIndicator(strokeWidth: 1.5),
+          ),
+      error:
+          (_, __) => Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade500,
+              shape: BoxShape.circle,
+            ),
+          ),
+    );
   }
 }

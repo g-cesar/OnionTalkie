@@ -49,3 +49,6 @@ bugreport-*.zip
 
 # Server data
 server/tor_data/
+
+# Large binaries
+ios/TorClient/tor.xcframework/

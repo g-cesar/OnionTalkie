@@ -20,24 +20,52 @@ const String torSocksHost = '127.0.0.1';
 // ─── Main ───────────────────────────────────────────────────────────
 
 Future<void> main(List<String> arguments) async {
-  final parser = ArgParser()
-    ..addOption('port',
-        abbr: 'p', defaultsTo: '$defaultPort', help: 'HTTP server port')
-    ..addOption('host',
-        abbr: 'H', defaultsTo: '0.0.0.0', help: 'Bind address (0.0.0.0 for LAN)')
-    ..addOption('web-dir',
-        abbr: 'w',
-        defaultsTo: '../build/web',
-        help: 'Path to Flutter web build output')
-    ..addOption('tor-socks',
-        defaultsTo: '$torSocksHost:$torSocksPort',
-        help: 'Tor SOCKS5 proxy address')
-    ..addOption('tor-data',
-        defaultsTo: './tor_data', help: 'Tor data directory')
-    ..addFlag('no-tor',
-        defaultsTo: false,
-        help: 'Don\'t auto-start Tor (assume it\'s already running)')
-    ..addFlag('help', abbr: 'h', negatable: false, help: 'Show help');
+  final parser =
+      ArgParser()
+        ..addOption(
+          'port',
+          abbr: 'p',
+          defaultsTo: '$defaultPort',
+          help: 'HTTP server port',
+        )
+        ..addOption(
+          'host',
+          abbr: 'H',
+          defaultsTo: '0.0.0.0',
+          help: 'Bind address (0.0.0.0 for LAN)',
+        )
+        ..addOption(
+          'web-dir',
+          abbr: 'w',
+          defaultsTo: '../build/web',
+          help: 'Path to Flutter web build output',
+        )
+        ..addOption(
+          'tor-socks',
+          defaultsTo: '$torSocksHost:$torSocksPort',
+          help: 'Tor SOCKS5 proxy address',
+        )
+        ..addOption(
+          'tor-data',
+          defaultsTo: './tor_data',
+          help: 'Tor data directory',
+        )
+        ..addOption(
+          'socks-port',
+          defaultsTo: '$torSocksPort',
+          help: 'Tor SOCKS5 port (default: 9050)',
+        )
+        ..addOption(
+          'control-port',
+          defaultsTo: '$torControlPort',
+          help: 'Tor Control port (default: 9051)',
+        )
+        ..addFlag(
+          'no-tor',
+          defaultsTo: false,
+          help: 'Don\'t auto-start Tor (assume it\'s already running)',
+        )
+        ..addFlag('help', abbr: 'h', negatable: false, help: 'Show help');
 
   final results = parser.parse(arguments);
   if (results['help'] as bool) {
@@ -52,14 +80,21 @@ Future<void> main(List<String> arguments) async {
   final torSocks = results['tor-socks'] as String;
   final torDataDir = results['tor-data'] as String;
   final noTor = results['no-tor'] as bool;
+  final socksPortOverride = int.parse(results['socks-port'] as String);
+  final controlPortOverride = int.parse(results['control-port'] as String);
 
   final socksHost = torSocks.split(':')[0];
-  final socksPort = int.parse(torSocks.split(':')[1]);
+  final socksPort =
+      results.wasParsed('socks-port')
+          ? socksPortOverride
+          : int.parse(torSocks.split(':')[1]);
 
   // Resolve web directory
   final webDirResolved = Directory(webDir);
   if (!webDirResolved.existsSync()) {
-    stderr.writeln('❌ Web directory not found: ${webDirResolved.absolute.path}');
+    stderr.writeln(
+      '❌ Web directory not found: ${webDirResolved.absolute.path}',
+    );
     stderr.writeln('   Run "flutter build web --release" first.');
     exit(1);
   }
@@ -83,7 +118,28 @@ Future<void> main(List<String> arguments) async {
       stderr.writeln('   macOS:   brew install tor');
       stderr.writeln('   Linux:   sudo apt install tor');
       stderr.writeln('   Windows: https://www.torproject.org/download/');
-      stderr.writeln('   Oppure avvia con --no-tor se Tor è già in esecuzione.');
+      stderr.writeln(
+        '   Oppure avvia con --no-tor se Tor è già in esecuzione.',
+      );
+      exit(1);
+    }
+
+    // Check if ports are available
+    if (await _isPortBusy(socksPort) ||
+        await _isPortBusy(controlPortOverride)) {
+      stderr.writeln(
+        '❌ Errore: Le porte Tor (SOCKS: $socksPort o Control: $controlPortOverride) sono già in uso.',
+      );
+      stderr.writeln(
+        '   Sembra che un\'altra istanza di Tor (forse l\'app mobile) sia in esecuzione.',
+      );
+      stderr.writeln('   Puoi usare porte diverse con:');
+      stderr.writeln(
+        '   ./start.sh --socks-port ${socksPort + 2} --control-port ${controlPortOverride + 2}',
+      );
+      stderr.writeln(
+        '   Oppure chiudi le altre istanze di Tor/simulatori e riprova.',
+      );
       exit(1);
     }
 
@@ -92,7 +148,7 @@ Future<void> main(List<String> arguments) async {
       torBinary: torBinary,
       dataDir: torDataDir,
       socksPort: socksPort,
-      controlPort: torControlPort,
+      controlPort: controlPortOverride,
       hiddenServicePort: hiddenServicePort,
       localListenPort: hiddenServicePort,
     );
@@ -102,16 +158,20 @@ Future<void> main(List<String> arguments) async {
     // Check if Tor is reachable
     print('🔍 Verifica connessione Tor SOCKS5 su $socksHost:$socksPort...');
     try {
-      final sock = await Socket.connect(socksHost, socksPort,
-          timeout: const Duration(seconds: 5));
+      final sock = await Socket.connect(
+        socksHost,
+        socksPort,
+        timeout: const Duration(seconds: 5),
+      );
       sock.destroy();
       print('✅ Tor SOCKS5 raggiungibile.');
 
       // Try to read onion address from existing Tor data
       onionAddress = await _readOnionAddress(torDataDir);
     } catch (_) {
-      stderr
-          .writeln('⚠️  Tor SOCKS5 non raggiungibile su $socksHost:$socksPort');
+      stderr.writeln(
+        '⚠️  Tor SOCKS5 non raggiungibile su $socksHost:$socksPort',
+      );
       stderr.writeln('   Assicurati che Tor sia in esecuzione.');
     }
   }
@@ -124,6 +184,7 @@ Future<void> main(List<String> arguments) async {
   final bridge = TorBridge(
     socksHost: socksHost,
     socksPort: socksPort,
+    controlPort: controlPortOverride,
     onionAddress: onionAddress,
     hiddenServicePort: hiddenServicePort,
   );
@@ -158,8 +219,12 @@ Future<void> main(List<String> arguments) async {
     print('   LAN:      http://$localIp:$port');
   }
   print('');
-  print('📱 Apri l\'URL nel browser di qualsiasi dispositivo sulla rete locale.');
-  print('   Il relay WebSocket è integrato — nessuna configurazione necessaria.');
+  print(
+    '📱 Apri l\'URL nel browser di qualsiasi dispositivo sulla rete locale.',
+  );
+  print(
+    '   Il relay WebSocket è integrato — nessuna configurazione necessaria.',
+  );
   print('');
   print('   Premi Ctrl+C per arrestare.\n');
 
@@ -249,15 +314,162 @@ class _ListenClient {
 class TorBridge {
   final String socksHost;
   final int socksPort;
+  final int controlPort;
   String? onionAddress;
   final int hiddenServicePort;
 
   ServerSocket? _incomingServer;
   final List<_ListenClient> _listenClients = [];
 
+  // ── Circuit querying ──
+
+  Future<List<Map<String, String>>?> getCircuitInfo() async {
+    Socket? socket;
+    final buf = StringBuffer();
+    Completer<String>? commandComp;
+
+    void resetComp() {
+      buf.clear();
+      commandComp = Completer<String>();
+    }
+
+    Future<String> sendCommand(Socket s, String cmd) async {
+      resetComp();
+      s.write('$cmd\r\n');
+      await s.flush();
+      return commandComp!.future.timeout(const Duration(seconds: 5));
+    }
+
+    try {
+      socket = await Socket.connect(
+        '127.0.0.1',
+        controlPort,
+      ).timeout(const Duration(seconds: 5));
+
+      resetComp();
+      socket.listen(
+        (data) {
+          buf.write(utf8.decode(data));
+          final content = buf.toString();
+          if (content.endsWith('250 OK\r\n') ||
+              RegExp(r'[45]\d{2} .+\r\n$').hasMatch(content)) {
+            if (commandComp != null && !commandComp!.isCompleted) {
+              commandComp!.complete(content);
+            }
+          }
+        },
+        onError: (e) {
+          if (commandComp != null && !commandComp!.isCompleted) {
+            commandComp!.completeError(e);
+          }
+        },
+        onDone: () {
+          if (commandComp != null && !commandComp!.isCompleted) {
+            commandComp!.complete(buf.toString());
+          }
+        },
+      );
+
+      // 1) Authenticate
+      final auth = await sendCommand(socket, 'AUTHENTICATE');
+      if (!auth.contains('250 OK')) return null;
+
+      // 2) Get circuit-status
+      final circuitResp = await sendCommand(socket, 'GETINFO circuit-status');
+      final relays = _parseRelays(circuitResp);
+      if (relays == null || relays.isEmpty) return null;
+
+      // 3) Resolve IP + country per relay
+      final hops = <Map<String, String>>[];
+      final roles = ['Guard', 'Relay', 'Exit/Rendezvous'];
+
+      for (int i = 0; i < relays.length; i++) {
+        final (fingerprint, name) = relays[i];
+        final role = i < roles.length ? roles[i] : 'Hop ${i + 1}';
+
+        String? ip;
+        try {
+          final nsResp = await sendCommand(
+            socket,
+            'GETINFO ns/id/$fingerprint',
+          );
+          ip = _parseIpFromNs(nsResp);
+        } catch (_) {}
+
+        String? cc;
+        if (ip != null) {
+          try {
+            final ccResp = await sendCommand(
+              socket,
+              'GETINFO ip-to-country/$ip',
+            );
+            cc = _parseCountryCode(ccResp);
+          } catch (_) {}
+        }
+
+        hops.add({
+          'role': role,
+          'name': name,
+          'fingerprint': fingerprint,
+          if (ip != null) 'ip': ip,
+          if (cc != null) 'countryCode': cc,
+        });
+      }
+      return hops;
+    } catch (e) {
+      print('❌ Errore durante il recupero del circuito: $e');
+      return null;
+    } finally {
+      try {
+        socket?.write('QUIT\r\n');
+        await socket?.flush();
+      } catch (_) {}
+      await socket?.close();
+    }
+  }
+
+  static List<(String, String)>? _parseRelays(String response) {
+    final lines = response.split('\n');
+    String? bestCircuit;
+    for (final line in lines) {
+      if (line.contains('BUILT') && line.contains('\$')) {
+        bestCircuit = line;
+        break;
+      }
+    }
+    if (bestCircuit == null) return null;
+    final relayPattern = RegExp(r'\$([A-F0-9]+)(?:[~=](\w+))?');
+    final matches = relayPattern.allMatches(bestCircuit).toList();
+    if (matches.isEmpty) return null;
+    return [for (final m in matches) (m.group(1)!, m.group(2) ?? 'Unknown')];
+  }
+
+  static String? _parseIpFromNs(String response) {
+    final rLine = response
+        .split('\n')
+        .firstWhere((l) => l.startsWith('r '), orElse: () => '');
+    if (rLine.isEmpty) return null;
+    final parts = rLine.split(RegExp(r'\s+'));
+    if (parts.length >= 7) {
+      final candidate = parts[6];
+      if (RegExp(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$').hasMatch(candidate)) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  static String? _parseCountryCode(String response) {
+    final match = RegExp(
+      r'ip-to-country/[\d.]+=([\w]{2})',
+    ).firstMatch(response);
+    return match?.group(1)?.toLowerCase();
+  }
+
   TorBridge({
     required this.socksHost,
     required this.socksPort,
+    required this.controlPort,
     required this.onionAddress,
     required this.hiddenServicePort,
   });
@@ -288,10 +500,32 @@ class TorBridge {
           } else {
             ws.sink.add('ERROR:Onion address not available');
           }
+        } else if (msg.startsWith('CMD:PROBE ')) {
+          final target = msg.substring(10).trim();
+          print('🔍 Probing HS propagation: $target');
+          probe(target, hiddenServicePort).then((ready) {
+            ws.sink.add('PROBE:${ready ? "READY" : "WAIT"}');
+          });
+        } else if (msg.startsWith('CMD:PING ')) {
+          final target = msg.substring(9).trim();
+          print('🔍 Ping peer online: $target');
+          probe(target, hiddenServicePort).then((online) {
+            ws.sink.add('PONG:${online ? "ONLINE" : "OFFLINE"}');
+          });
         } else if (msg == 'CMD:STOP') {
           ws.sink.add('STOPPED');
         } else if (msg == 'CMD:ROTATE') {
-          ws.sink.add('ERROR:Rotation not supported in local mode. Restart Tor to get a new address.');
+          ws.sink.add(
+            'ERROR:Rotation not supported in local mode. Restart Tor to get a new address.',
+          );
+        } else if (msg == 'CMD:CIRCUIT') {
+          getCircuitInfo().then((hops) {
+            if (hops != null) {
+              ws.sink.add('CIRCUIT_JSON:${jsonEncode(hops)}');
+            } else {
+              ws.sink.add('ERROR:Circuit information not available');
+            }
+          });
         }
       },
       onDone: () {
@@ -311,15 +545,21 @@ class TorBridge {
         InternetAddress.anyIPv4,
         hiddenServicePort,
       );
-      print('👂 In ascolto per chiamate in entrata sulla porta $hiddenServicePort');
+      print(
+        '👂 In ascolto per chiamate in entrata sulla porta $hiddenServicePort',
+      );
 
       _incomingServer!.listen((Socket tcpSocket) {
         print('📞 Chiamata in entrata da ${tcpSocket.remoteAddress.address}');
         _bridgeIncomingToWebSocket(tcpSocket);
       });
     } catch (e) {
-      print('⚠️  Impossibile avviare listener sulla porta $hiddenServicePort: $e');
-      print('   Porta già in uso? Un\'altro istanza potrebbe essere in esecuzione.');
+      print(
+        '⚠️  Impossibile avviare listener sulla porta $hiddenServicePort: $e',
+      );
+      print(
+        '   Porta già in uso? Un\'altro istanza potrebbe essere in esecuzione.',
+      );
     }
   }
 
@@ -331,14 +571,11 @@ class TorBridge {
     // Start a periodic WebSocket ping to prevent idle timeouts
     // (browsers, proxies and load balancers often close idle WS after
     // 30-60s).  We send a lightweight PING every 25 seconds.
-    final keepAlive = Timer.periodic(
-      const Duration(seconds: 25),
-      (_) {
-        try {
-          ws.sink.add('PING\n');
-        } catch (_) {}
-      },
-    );
+    final keepAlive = Timer.periodic(const Duration(seconds: 25), (_) {
+      try {
+        ws.sink.add('PING\n');
+      } catch (_) {}
+    });
 
     // Listen once — forward data to the StreamController so the bridge
     // can consume it later without a second .listen() on the WS stream.
@@ -379,12 +616,16 @@ class TorBridge {
         } catch (_) {}
       },
       onDone: () {
-        try { client.ws.sink.close(); } catch (_) {}
+        try {
+          client.ws.sink.close();
+        } catch (_) {}
         client.close();
         print('🔗 Chiamata in entrata terminata (TCP chiuso)');
       },
       onError: (_) {
-        try { client.ws.sink.close(); } catch (_) {}
+        try {
+          client.ws.sink.close();
+        } catch (_) {}
         client.close();
       },
     );
@@ -397,11 +638,15 @@ class TorBridge {
         } catch (_) {}
       },
       onDone: () {
-        try { tcpSocket.destroy(); } catch (_) {}
+        try {
+          tcpSocket.destroy();
+        } catch (_) {}
         print('🔗 Chiamata in entrata terminata (WS chiuso)');
       },
       onError: (_) {
-        try { tcpSocket.destroy(); } catch (_) {}
+        try {
+          tcpSocket.destroy();
+        } catch (_) {}
       },
     );
   }
@@ -420,7 +665,10 @@ class TorBridge {
   /// Each attempt creates a fresh socket so we never double-listen on a
   /// single-subscription stream.
   Future<void> _connectAndBridge(
-      WebSocketChannel ws, String target, int port) async {
+    WebSocketChannel ws,
+    String target,
+    int port,
+  ) async {
     const maxAttempts = 3;
 
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -455,10 +703,13 @@ class TorBridge {
             if (!handshakeComplete) {
               if (dataReady != null && !dataReady!.isCompleted) {
                 dataReady!.completeError(
-                    Exception('Socket closed during SOCKS5 handshake'));
+                  Exception('Socket closed during SOCKS5 handshake'),
+                );
               }
             } else {
-              try { ws.sink.close(); } catch (_) {}
+              try {
+                ws.sink.close();
+              } catch (_) {}
               print('📤 Connessione in uscita terminata (TCP chiuso)');
             }
           },
@@ -468,7 +719,9 @@ class TorBridge {
                 dataReady!.completeError(e);
               }
             } else {
-              try { ws.sink.close(); } catch (_) {}
+              try {
+                ws.sink.close();
+              } catch (_) {}
             }
           },
         );
@@ -479,8 +732,7 @@ class TorBridge {
             dataReady = Completer<void>();
             await dataReady!.future.timeout(
               const Duration(seconds: 60),
-              onTimeout: () =>
-                  throw TimeoutException('SOCKS5 read timeout'),
+              onTimeout: () => throw TimeoutException('SOCKS5 read timeout'),
             );
           }
           final result = readBuffer.sublist(0, count);
@@ -500,7 +752,10 @@ class TorBridge {
         // SOCKS5 connect request: version 5, connect, reserved, domain
         final hostBytes = utf8.encode(target);
         socket.add([
-          0x05, 0x01, 0x00, 0x03,
+          0x05,
+          0x01,
+          0x00,
+          0x03,
           hostBytes.length,
           ...hostBytes,
           (port >> 8) & 0xFF,
@@ -532,24 +787,31 @@ class TorBridge {
             } catch (_) {}
           },
           onDone: () {
-            try { socket!.destroy(); } catch (_) {}
+            try {
+              socket!.destroy();
+            } catch (_) {}
             print('📤 Connessione in uscita terminata (WS chiuso)');
           },
           onError: (_) {
-            try { socket!.destroy(); } catch (_) {}
+            try {
+              socket!.destroy();
+            } catch (_) {}
           },
         );
 
         return; // success — bridge is running
-
       } catch (e) {
         print('❌ Tentativo $attempt/$maxAttempts SOCKS5 fallito: $e');
-        try { socket?.destroy(); } catch (_) {}
+        try {
+          socket?.destroy();
+        } catch (_) {}
 
         if (attempt == maxAttempts) {
           print('❌ Connessione SOCKS5 fallita dopo $maxAttempts tentativi');
           try {
-            ws.sink.add('ERROR:Connection failed after $maxAttempts attempts: $e\n');
+            ws.sink.add(
+              'ERROR:Connection failed after $maxAttempts attempts: $e\n',
+            );
             ws.sink.close();
           } catch (_) {}
           return;
@@ -562,9 +824,79 @@ class TorBridge {
     }
   }
 
+  /// Lightweight SOCKS5 probe to check if a hidden service is reachable.
+  /// Returns [true] if the handshake completes successfully.
+  Future<bool> probe(String target, int port) async {
+    Socket? socket;
+    try {
+      socket = await Socket.connect(
+        socksHost,
+        socksPort,
+        timeout: const Duration(seconds: 30),
+      );
+
+      final readBuffer = <int>[];
+      Completer<void>? dataReady;
+
+      socket.listen(
+        (data) {
+          readBuffer.addAll(data);
+          if (dataReady != null && !dataReady!.isCompleted) {
+            dataReady!.complete();
+          }
+        },
+        onError: (_) {},
+        onDone: () {
+          if (dataReady != null && !dataReady!.isCompleted) {
+            dataReady!.completeError(Exception('Closed'));
+          }
+        },
+      );
+
+      Future<List<int>> readExact(int count) async {
+        while (readBuffer.length < count) {
+          dataReady = Completer<void>();
+          await dataReady!.future.timeout(const Duration(seconds: 30));
+        }
+        final result = readBuffer.sublist(0, count);
+        readBuffer.removeRange(0, count);
+        return result;
+      }
+
+      // SOCKS5 greeting
+      socket.add([0x05, 0x01, 0x00]);
+      await socket.flush();
+      final greeting = await readExact(2);
+      if (greeting[0] != 0x05 || greeting[1] != 0x00) return false;
+
+      // SOCKS5 connect
+      final hostBytes = utf8.encode(target);
+      socket.add([
+        0x05,
+        0x01,
+        0x00,
+        0x03,
+        hostBytes.length,
+        ...hostBytes,
+        (port >> 8) & 0xFF,
+        port & 0xFF,
+      ]);
+      await socket.flush();
+
+      final response = await readExact(10);
+      return response[0] == 0x05 && response[1] == 0x00;
+    } catch (_) {
+      return false;
+    } finally {
+      socket?.destroy();
+    }
+  }
+
   Future<void> dispose() async {
     for (final client in _listenClients) {
-      try { client.ws.sink.close(); } catch (_) {}
+      try {
+        client.ws.sink.close();
+      } catch (_) {}
       client.close();
     }
     _listenClients.clear();
@@ -633,10 +965,10 @@ Log notice stdout
 
   print('📝 Torrc generato: ${torrcFile.absolute.path}');
 
-  final process = await Process.start(
-    torBinary,
-    ['-f', torrcFile.absolute.path],
-  );
+  final process = await Process.start(torBinary, [
+    '-f',
+    torrcFile.absolute.path,
+  ]);
 
   // Wait for bootstrap to reach 100%
   final completer = Completer<void>();
@@ -722,4 +1054,14 @@ Future<String?> _getLocalIp() async {
     }
   } catch (_) {}
   return null;
+}
+
+Future<bool> _isPortBusy(int port) async {
+  try {
+    final socket = await ServerSocket.bind('127.0.0.1', port);
+    await socket.close();
+    return false;
+  } catch (_) {
+    return true;
+  }
 }
