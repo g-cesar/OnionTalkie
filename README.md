@@ -176,6 +176,13 @@ Line-based text protocol over TCP (native) / WebSocket (web):
 ```
 Initiator                           Responder
     │                                    │
+    │──── ID:<onion> ───────────────────▶│  Identification
+    │──── CIPHER:<name> ────────────────▶│  Cipher negotiation
+    │◀─── ID:<onion> ───────────────────│  Responder identification
+    │◀─── CIPHER:<name> ────────────────│  Responder cipher
+    │                                    │
+    │  ✓ Responder loads SECRET          │
+    │                                    │
     │──── SPAKE2_PUB:<base64> ──────────▶│  Blinded public key exchange
     │◀─── SPAKE2_PUB:<base64> ──────────│  Responder replies
     │◀─── SPAKE2_CONFIRM:<hex> ─────────│  Responder confirms
@@ -183,12 +190,9 @@ Initiator                           Responder
     │                                    │
     │  ✓ Session key derived             │  ✓ Session key derived
     │                                    │
-    │──── ID:<onion> ───────────────────▶│  Identification
-    │──── CIPHER:<name> ────────────────▶│  Cipher negotiation
-    │◀─── ID:<onion> ───────────────────│
-    │◀─── CIPHER:<name> ────────────────│
-    │                                    │
     │  ══════ Call Active ══════         │
+    │  (HMAC enabled after handshake)    │
+    │                                    │
     │──── PTT_START ────────────────────▶│
     │──── AUDIO:<base64> ───────────────▶│  Audio encrypted with SPAKE2 key
     │──── PTT_STOP ─────────────────────▶│
@@ -235,7 +239,7 @@ flutter build ios --debug --simulator
 flutter build ipa --release --no-codesign
 ```
 
-> For sideloading without the App Store, use AltStore, Sideloadly, or an ad-hoc/enterprise certificate.
+> For sideloading without the App Store, use SideStore, AltStore, Sideloadly, or an ad-hoc/enterprise certificate.
 
 ### Web Build
 
