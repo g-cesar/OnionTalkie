@@ -15,9 +15,11 @@ class ConnectionServiceNative extends ConnectionServiceBase {
   Socket? _socket;
   ServerSocket? _serverSocket;
   StreamSubscription<Uint8List>? _socketSubscription;
-  final _messageController = StreamController<MapEntry<String, String>>.broadcast();
+  final _messageController =
+      StreamController<MapEntry<String, String>>.broadcast();
   bool _isConnected = false;
   StringBuffer _lineBuffer = StringBuffer();
+  int? _actualPort;
 
   // Buffered reader state — used during SOCKS5 handshake so we never
   // subscribe to a Socket stream more than once.
@@ -27,9 +29,12 @@ class ConnectionServiceNative extends ConnectionServiceBase {
   bool _handshakeComplete = false;
 
   @override
-  Stream<MapEntry<String, String>> get messageStream => _messageController.stream;
+  Stream<MapEntry<String, String>> get messageStream =>
+      _messageController.stream;
   @override
   bool get isConnected => _isConnected;
+  @override
+  int? get serverSocketPort => _actualPort;
 
   // ────────────────────────────── Socket listener ──────────────────────────
 
@@ -83,31 +88,49 @@ class ConnectionServiceNative extends ConnectionServiceBase {
 
   /// Listen for incoming connections on the hidden service port.
   @override
-  Future<void> listen() async {
+  Future<void> listen({int? port}) async {
     // Always clean up stale sockets from previous sessions so we never
     // silently return with an old, unusable server socket.
     if (_serverSocket != null) {
-      debugPrint('ConnectionService: Closing stale server socket before re-listen');
-      try { await _serverSocket!.close(); } catch (_) {}
+      debugPrint(
+        'ConnectionService: Closing stale server socket before re-listen',
+      );
+      try {
+        await _serverSocket!.close();
+      } catch (_) {}
       _serverSocket = null;
     }
     if (_socket != null) {
-      debugPrint('ConnectionService: Closing stale client socket before re-listen');
+      debugPrint(
+        'ConnectionService: Closing stale client socket before re-listen',
+      );
       await _socketSubscription?.cancel();
       _socketSubscription = null;
-      try { await _socket!.close(); } catch (_) {}
+      try {
+        await _socket!.close();
+      } catch (_) {}
       _socket = null;
       _isConnected = false;
     }
 
+    final targetPort = port ?? AppConstants.listenPort;
     _serverSocket = await ServerSocket.bind(
       InternetAddress.loopbackIPv4,
-      AppConstants.listenPort,
+      targetPort,
     );
+    _actualPort = _serverSocket!.port;
 
-    debugPrint('ConnectionService: Listening on port ${AppConstants.listenPort}');
+    debugPrint('ConnectionService: Listening on port $_actualPort');
 
     _serverSocket!.listen((socket) {
+      if (_isConnected) {
+        debugPrint(
+          'ConnectionService: Ignoring incoming connection from '
+          '${socket.remoteAddress.address} while already connected',
+        );
+        socket.destroy();
+        return;
+      }
       debugPrint(
         'ConnectionService: Incoming connection from '
         '${socket.remoteAddress.address}',
@@ -263,36 +286,61 @@ class ConnectionServiceNative extends ConnectionServiceBase {
     if (line.startsWith(AppConstants.protoHmacPrefix)) {
       final unwrapped = unwrapMessage(line);
       if (unwrapped == null) {
-        debugPrint('ConnectionService: HMAC verification failed, dropping message');
+        debugPrint(
+          'ConnectionService: HMAC verification failed, dropping message',
+        );
         return;
       }
       actualLine = unwrapped;
     } else if (hmacEnabledFlag) {
       // HMAC is enabled but message is not signed — reject
-      debugPrint('ConnectionService: Unsigned message rejected (HMAC required)');
+      debugPrint(
+        'ConnectionService: Unsigned message rejected (HMAC required)',
+      );
       return;
     }
 
     if (actualLine.startsWith(AppConstants.protoId)) {
-      _messageController.add(MapEntry('ID', actualLine.substring(AppConstants.protoId.length)));
+      _messageController.add(
+        MapEntry('ID', actualLine.substring(AppConstants.protoId.length)),
+      );
     } else if (actualLine.startsWith(AppConstants.protoCipher)) {
-      _messageController.add(MapEntry('CIPHER', actualLine.substring(AppConstants.protoCipher.length)));
+      _messageController.add(
+        MapEntry(
+          'CIPHER',
+          actualLine.substring(AppConstants.protoCipher.length),
+        ),
+      );
     } else if (actualLine == AppConstants.protoPttStart) {
       _messageController.add(const MapEntry('PTT_START', ''));
     } else if (actualLine == AppConstants.protoPttStop) {
       _messageController.add(const MapEntry('PTT_STOP', ''));
     } else if (actualLine.startsWith(AppConstants.protoAudio)) {
-      _messageController.add(MapEntry('AUDIO', actualLine.substring(AppConstants.protoAudio.length)));
+      _messageController.add(
+        MapEntry('AUDIO', actualLine.substring(AppConstants.protoAudio.length)),
+      );
     } else if (actualLine.startsWith(AppConstants.protoMsg)) {
-      _messageController.add(MapEntry('MSG', actualLine.substring(AppConstants.protoMsg.length)));
+      _messageController.add(
+        MapEntry('MSG', actualLine.substring(AppConstants.protoMsg.length)),
+      );
     } else if (actualLine == AppConstants.protoHangup) {
       _messageController.add(const MapEntry('HANGUP', ''));
     } else if (actualLine == AppConstants.protoPing) {
       _messageController.add(const MapEntry('PING', ''));
     } else if (actualLine.startsWith(AppConstants.protoSpake2Pub)) {
-      _messageController.add(MapEntry('SPAKE2_PUB', actualLine.substring(AppConstants.protoSpake2Pub.length)));
+      _messageController.add(
+        MapEntry(
+          'SPAKE2_PUB',
+          actualLine.substring(AppConstants.protoSpake2Pub.length),
+        ),
+      );
     } else if (actualLine.startsWith(AppConstants.protoSpake2Confirm)) {
-      _messageController.add(MapEntry('SPAKE2_CONFIRM', actualLine.substring(AppConstants.protoSpake2Confirm.length)));
+      _messageController.add(
+        MapEntry(
+          'SPAKE2_CONFIRM',
+          actualLine.substring(AppConstants.protoSpake2Confirm.length),
+        ),
+      );
     } else if (actualLine.startsWith('ERROR:')) {
       debugPrint('ConnectionService: Remote error: $actualLine');
       _messageController.add(MapEntry('ERROR', actualLine.substring(6)));
@@ -314,7 +362,8 @@ class ConnectionServiceNative extends ConnectionServiceBase {
 
   /// Send caller ID.
   @override
-  void sendId(String onionAddress) => send('${AppConstants.protoId}$onionAddress');
+  void sendId(String onionAddress) =>
+      send('${AppConstants.protoId}$onionAddress');
 
   /// Send cipher info.
   @override
@@ -330,11 +379,13 @@ class ConnectionServiceNative extends ConnectionServiceBase {
 
   /// Send encrypted audio data.
   @override
-  void sendAudio(String base64Audio) => send('${AppConstants.protoAudio}$base64Audio');
+  void sendAudio(String base64Audio) =>
+      send('${AppConstants.protoAudio}$base64Audio');
 
   /// Send encrypted text message.
   @override
-  void sendMessage(String base64Msg) => send('${AppConstants.protoMsg}$base64Msg');
+  void sendMessage(String base64Msg) =>
+      send('${AppConstants.protoMsg}$base64Msg');
 
   /// Send hangup signal.
   @override

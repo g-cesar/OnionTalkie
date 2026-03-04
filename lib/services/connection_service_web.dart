@@ -30,11 +30,15 @@ class ConnectionServiceWeb extends ConnectionServiceBase {
 
   /// Listen for incoming connections via relay.
   @override
-  Future<void> listen() async {
+  Future<void> listen({int? port}) async {
     // Clean up stale connection from previous session
     if (_channel != null) {
-      debugPrint('ConnectionServiceWeb: Closing stale channel before re-listen');
-      try { await _channel!.sink.close(); } catch (_) {}
+      debugPrint(
+        'ConnectionServiceWeb: Closing stale channel before re-listen',
+      );
+      try {
+        await _channel!.sink.close();
+      } catch (_) {}
       _channel = null;
       _isConnected = false;
     }
@@ -49,9 +53,7 @@ class ConnectionServiceWeb extends ConnectionServiceBase {
     debugPrint('ConnectionServiceWeb: Connecting to relay for listen mode...');
 
     try {
-      _channel = WebSocketChannel.connect(
-        Uri.parse('$relayUrl/listen'),
-      );
+      _channel = WebSocketChannel.connect(Uri.parse('$relayUrl/listen'));
       await _channel!.ready;
       _setupListener();
       debugPrint('ConnectionServiceWeb: Listening via relay');
@@ -77,12 +79,13 @@ class ConnectionServiceWeb extends ConnectionServiceBase {
       throw Exception('Relay server URL not configured');
     }
 
-    debugPrint(
-        'ConnectionServiceWeb: Connecting to $targetHost via relay...');
+    debugPrint('ConnectionServiceWeb: Connecting to $targetHost via relay...');
 
     try {
       _channel = WebSocketChannel.connect(
-        Uri.parse('$relayUrl/connect?target=$targetHost&port=${AppConstants.listenPort}'),
+        Uri.parse(
+          '$relayUrl/connect?target=$targetHost&port=${AppConstants.listenPort}',
+        ),
       );
       await _channel!.ready;
       _setupListener();
@@ -135,41 +138,60 @@ class ConnectionServiceWeb extends ConnectionServiceBase {
     if (line.startsWith(AppConstants.protoHmacPrefix)) {
       final unwrapped = unwrapMessage(line);
       if (unwrapped == null) {
-        debugPrint('ConnectionServiceWeb: HMAC verification failed, dropping message');
+        debugPrint(
+          'ConnectionServiceWeb: HMAC verification failed, dropping message',
+        );
         return;
       }
       actualLine = unwrapped;
     } else if (hmacEnabledFlag) {
-      debugPrint('ConnectionServiceWeb: Unsigned message rejected (HMAC required)');
+      debugPrint(
+        'ConnectionServiceWeb: Unsigned message rejected (HMAC required)',
+      );
       return;
     }
 
     if (actualLine.startsWith(AppConstants.protoId)) {
-      _messageController
-          .add(MapEntry('ID', actualLine.substring(AppConstants.protoId.length)));
+      _messageController.add(
+        MapEntry('ID', actualLine.substring(AppConstants.protoId.length)),
+      );
     } else if (actualLine.startsWith(AppConstants.protoCipher)) {
       _messageController.add(
-          MapEntry('CIPHER', actualLine.substring(AppConstants.protoCipher.length)));
+        MapEntry(
+          'CIPHER',
+          actualLine.substring(AppConstants.protoCipher.length),
+        ),
+      );
     } else if (actualLine == AppConstants.protoPttStart) {
       _messageController.add(const MapEntry('PTT_START', ''));
     } else if (actualLine == AppConstants.protoPttStop) {
       _messageController.add(const MapEntry('PTT_STOP', ''));
     } else if (actualLine.startsWith(AppConstants.protoAudio)) {
       _messageController.add(
-          MapEntry('AUDIO', actualLine.substring(AppConstants.protoAudio.length)));
+        MapEntry('AUDIO', actualLine.substring(AppConstants.protoAudio.length)),
+      );
     } else if (actualLine.startsWith(AppConstants.protoMsg)) {
-      _messageController
-          .add(MapEntry('MSG', actualLine.substring(AppConstants.protoMsg.length)));
+      _messageController.add(
+        MapEntry('MSG', actualLine.substring(AppConstants.protoMsg.length)),
+      );
     } else if (actualLine == AppConstants.protoHangup) {
       _messageController.add(const MapEntry('HANGUP', ''));
     } else if (actualLine == AppConstants.protoPing) {
       _messageController.add(const MapEntry('PING', ''));
     } else if (actualLine.startsWith(AppConstants.protoSpake2Pub)) {
       _messageController.add(
-          MapEntry('SPAKE2_PUB', actualLine.substring(AppConstants.protoSpake2Pub.length)));
+        MapEntry(
+          'SPAKE2_PUB',
+          actualLine.substring(AppConstants.protoSpake2Pub.length),
+        ),
+      );
     } else if (actualLine.startsWith(AppConstants.protoSpake2Confirm)) {
       _messageController.add(
-          MapEntry('SPAKE2_CONFIRM', actualLine.substring(AppConstants.protoSpake2Confirm.length)));
+        MapEntry(
+          'SPAKE2_CONFIRM',
+          actualLine.substring(AppConstants.protoSpake2Confirm.length),
+        ),
+      );
     } else if (actualLine.startsWith('ERROR:')) {
       // Relay server error (e.g. SOCKS5 connection failed)
       debugPrint('ConnectionServiceWeb: Relay error: $actualLine');
@@ -194,8 +216,7 @@ class ConnectionServiceWeb extends ConnectionServiceBase {
   void sendId(String onionAddress) =>
       send('${AppConstants.protoId}$onionAddress');
   @override
-  void sendCipher(String cipher) =>
-      send('${AppConstants.protoCipher}$cipher');
+  void sendCipher(String cipher) => send('${AppConstants.protoCipher}$cipher');
   @override
   void sendPttStart() => send(AppConstants.protoPttStart);
   @override

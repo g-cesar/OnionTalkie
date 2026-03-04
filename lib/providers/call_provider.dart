@@ -141,6 +141,16 @@ class CallNotifier extends StateNotifier<CallState> {
 
       await ForegroundListenService.startListening();
 
+      // Send ID and CIPHER immediately so the responder can identify us
+      // and load the SHARED SECRET before processing SPAKE2_PUB.
+      final torStatus = _ref.read(torProvider);
+      if (torStatus.onionAddress != null) {
+        debugPrint('CallNotifier: Sending local ID: ${torStatus.onionAddress}');
+        _connectionService.sendId(torStatus.onionAddress!);
+      }
+      _connectionService.sendCipher(settings.cipher);
+      _encryptionService.setCipher(settings.cipher);
+
       if (settings.keyExchangeMode == KeyExchangeMode.pake &&
           _encryptionService.hasSecret) {
         // ── PAKE mode: start SPAKE2 handshake, stay in connecting ──
@@ -149,7 +159,7 @@ class CallNotifier extends StateNotifier<CallState> {
         debugPrint('CallNotifier: SPAKE2 initiator handshake started');
         // → call setup will complete in _handleSpake2Confirm
       } else {
-        // ── Manual mode: send ID/CIPHER immediately and go active ──
+        // ── Manual mode: transition to active ──
         _sendIdAndGoActive(settings);
       }
     } catch (e) {
@@ -162,22 +172,17 @@ class CallNotifier extends StateNotifier<CallState> {
     }
   }
 
-  /// Send our ID + CIPHER and transition to active call state.
+  /// Transition to active call state.
   void _sendIdAndGoActive(AppSettings settings, {bool pakeActive = false}) {
-    final torStatus = _ref.read(torProvider);
-    if (torStatus.onionAddress != null) {
-      _connectionService.sendId(torStatus.onionAddress!);
-    }
+    // Note: ID and CIPHER are now sent at the start of call() or
+    // upon receiving the remote ID for the responder.
 
-    _connectionService.sendCipher(settings.cipher);
+    // Ensure cipher is set in encryption service even if ID-first fails
     _encryptionService.setCipher(settings.cipher);
 
-    // Enable HMAC *after* the handshake messages (ID/CIPHER) have been
-    // sent in plain text.  The receiver does not have the HMAC key yet
-    // (it is loaded only after the peer's ID is resolved), so wrapping
-    // the initial messages would cause an HMAC verification failure on
-    // the remote side.
-    _setupHmac(settings);
+    // Disable HMAC during handshake. It will be enabled in _checkEnableHmac()
+    // once both sides have exchanged ID/CIPHER.
+    _connectionService.setHmac(enabled: false);
 
     if (!pakeActive) {
       state = state
@@ -206,12 +211,22 @@ class CallNotifier extends StateNotifier<CallState> {
     }
   }
 
-  /// Configure HMAC on the connection service.
-  void _setupHmac(AppSettings settings) {
-    _connectionService.setHmac(
-      enabled: settings.hmacEnabled,
-      key: _encryptionService.hasSecret ? _encryptionService.cipher : '',
-    );
+  /// Configure HMAC on the connection service if both sides are ready.
+  void _checkEnableHmac() {
+    final settings = _ref.read(settingsProvider);
+    if (!settings.hmacEnabled) return;
+
+    // Both sides must have exchanged ID and CIPHER before we can enable HMAC.
+    // This ensures handshake messages (sent in plain text) are not rejected.
+    if (state.remoteAddress != null &&
+        state.remoteCipher != null &&
+        state.phase == CallPhase.active) {
+      final hmacKey = _encryptionService.getHmacKey();
+      if (hmacKey.isNotEmpty) {
+        _connectionService.setHmac(enabled: true, key: hmacKey);
+        debugPrint('CallNotifier: HMAC protocol authentication enabled');
+      }
+    }
   }
 
   /// Set up the message handler for incoming protocol messages.
@@ -242,6 +257,15 @@ class CallNotifier extends StateNotifier<CallState> {
         if (state.isIncoming && state.phase == CallPhase.connecting) {
           _resolveIncomingPeer(data);
 
+          // Send our ID and CIPHER back so the initiator knows we are ready
+          final torStatus = _ref.read(torProvider);
+          if (torStatus.onionAddress != null) {
+            _connectionService.sendId(torStatus.onionAddress!);
+          }
+          final settings = _ref.read(settingsProvider);
+          _connectionService.sendCipher(settings.cipher);
+          _encryptionService.setCipher(settings.cipher);
+
           // Notify user about the incoming connection
           ForegroundListenService.notifyIncomingCall();
 
@@ -250,10 +274,12 @@ class CallNotifier extends StateNotifier<CallState> {
           state = state.copyWith(phase: CallPhase.ringing);
           debugPrint('CallNotifier: incoming call from $data — ringing');
         }
+        _checkEnableHmac();
         break;
 
       case 'CIPHER':
         state = state.copyWith(remoteCipher: data);
+        _checkEnableHmac();
         break;
 
       case 'PTT_START':
@@ -411,9 +437,8 @@ class CallNotifier extends StateNotifier<CallState> {
     _connectionService.sendCipher(settings.cipher);
     _encryptionService.setCipher(settings.cipher);
 
-    // Enable HMAC *after* sending handshake messages (ID/CIPHER) in
-    // plain text — symmetric with the caller side.
-    _setupHmac(settings);
+    // Disable HMAC during handshake. It will be enabled in _checkEnableHmac().
+    _connectionService.setHmac(enabled: false);
 
     final isPake = _spake2 != null && _spake2!.isComplete;
 

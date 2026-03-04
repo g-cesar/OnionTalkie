@@ -11,6 +11,7 @@ import '../core/constants/app_constants.dart';
 abstract class ConnectionServiceBase {
   Stream<MapEntry<String, String>> get messageStream;
   bool get isConnected;
+  int? get serverSocketPort => null;
 
   /// HMAC authentication state.
   bool hmacEnabledFlag = false;
@@ -78,7 +79,7 @@ abstract class ConnectionServiceBase {
   }
 
   /// Listen for incoming connections.
-  Future<void> listen();
+  Future<void> listen({int? port});
 
   /// Connect to a remote .onion address.
   Future<void> connect(String onionAddress);

@@ -30,7 +30,9 @@ class EncryptionService {
       _derivedKey = null;
       debugPrint('EncryptionService: setSharedSecret — key cache cleared');
     } else {
-      debugPrint('EncryptionService: setSharedSecret — SPAKE2 key preserved (locked)');
+      debugPrint(
+        'EncryptionService: setSharedSecret — SPAKE2 key preserved (locked)',
+      );
     }
   }
 
@@ -48,8 +50,10 @@ class EncryptionService {
   void setSessionKey(Uint8List key) {
     _derivedKey = key;
     _keyLocked = true;
-    debugPrint('EncryptionService: setSessionKey — SPAKE2 key set & locked '
-        '(${key.length}B, hash=${_keyFingerprint(key)})');
+    debugPrint(
+      'EncryptionService: setSessionKey — SPAKE2 key set & locked '
+      '(${key.length}B, hash=${_keyFingerprint(key)})',
+    );
   }
 
   /// Clear any locked session key and revert to PBKDF2 derivation.
@@ -89,15 +93,17 @@ class EncryptionService {
     final keyLength = _getKeyLength();
     final salt = utf8.encode('TerminalPhone_v1_salt');
 
-    final pbkdf2 = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
-      ..init(Pbkdf2Parameters(
+    final pbkdf2 = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))..init(
+      Pbkdf2Parameters(
         Uint8List.fromList(salt),
         AppConstants.pbkdf2Iterations,
         keyLength,
-      ));
+      ),
+    );
 
-    _derivedKey =
-        pbkdf2.process(Uint8List.fromList(utf8.encode(_sharedSecret)));
+    _derivedKey = pbkdf2.process(
+      Uint8List.fromList(utf8.encode(_sharedSecret)),
+    );
     return _derivedKey!;
   }
 
@@ -107,6 +113,16 @@ class EncryptionService {
     if (_cipher.contains('192')) return 24;
     if (_cipher.contains('128')) return 16;
     return 32;
+  }
+
+  /// Derive a separate HMAC key from the current session key.
+  String getHmacKey() {
+    if (_derivedKey == null) return '';
+    // Derive a unique HMAC key by hashing the session key with a salt
+    final data = Uint8List(_derivedKey!.length + 4);
+    data.setAll(0, _derivedKey!);
+    data.setAll(_derivedKey!.length, utf8.encode('hmac'));
+    return crypto_lib.sha256.convert(data).toString();
   }
 
   /// Short hex fingerprint of a key for debug logging.
@@ -131,9 +147,11 @@ class EncryptionService {
     }
 
     final key = _deriveKey();
-    debugPrint('EncryptionService: ENCRYPT cipher=$_cipher '
-        'keyHash=${_keyFingerprint(key)} locked=$_keyLocked '
-        'plainLen=${plainData.length}');
+    debugPrint(
+      'EncryptionService: ENCRYPT cipher=$_cipher '
+      'keyHash=${_keyFingerprint(key)} locked=$_keyLocked '
+      'plainLen=${plainData.length}',
+    );
 
     switch (_cipherFamily) {
       case 'chacha20':
@@ -161,9 +179,11 @@ class EncryptionService {
     }
 
     final key = _deriveKey();
-    debugPrint('EncryptionService: DECRYPT cipher=$_cipher '
-        'keyHash=${_keyFingerprint(key)} locked=$_keyLocked '
-        'dataLen=${base64Data.length}');
+    debugPrint(
+      'EncryptionService: DECRYPT cipher=$_cipher '
+      'keyHash=${_keyFingerprint(key)} locked=$_keyLocked '
+      'dataLen=${base64Data.length}',
+    );
 
     switch (_cipherFamily) {
       case 'chacha20':
@@ -189,11 +209,9 @@ class EncryptionService {
     final key = _deriveKey();
     final iv = _generateIV(16);
 
-    final encrypter = Encrypter(AES(
-      Key(key),
-      mode: _getAESMode(),
-      padding: _getBlockPadding(),
-    ));
+    final encrypter = Encrypter(
+      AES(Key(key), mode: _getAESMode(), padding: _getBlockPadding()),
+    );
 
     final encrypted = encrypter.encryptBytes(plainData, iv: IV(iv));
 
@@ -209,11 +227,9 @@ class EncryptionService {
     final ciphertext = combined.sublist(16);
 
     final key = _deriveKey();
-    final encrypter = Encrypter(AES(
-      Key(key),
-      mode: _getAESMode(),
-      padding: _getBlockPadding(),
-    ));
+    final encrypter = Encrypter(
+      AES(Key(key), mode: _getAESMode(), padding: _getBlockPadding()),
+    );
 
     return Uint8List.fromList(
       encrypter.decryptBytes(
@@ -242,8 +258,9 @@ class EncryptionService {
     }
 
     // Plain ChaCha20
-    final cipher = ChaCha7539Engine()
-      ..init(true, ParametersWithIV(KeyParameter(key), nonce));
+    final cipher =
+        ChaCha7539Engine()
+          ..init(true, ParametersWithIV(KeyParameter(key), nonce));
 
     final output = Uint8List(plainData.length);
     cipher.processBytes(plainData, 0, plainData.length, output, 0);
@@ -266,8 +283,9 @@ class EncryptionService {
     final ciphertext = Uint8List.sublistView(combined, 12);
     final key = _deriveKey();
 
-    final cipher = ChaCha7539Engine()
-      ..init(false, ParametersWithIV(KeyParameter(key), nonce));
+    final cipher =
+        ChaCha7539Engine()
+          ..init(false, ParametersWithIV(KeyParameter(key), nonce));
 
     final output = Uint8List(ciphertext.length);
     cipher.processBytes(ciphertext, 0, ciphertext.length, output, 0);
@@ -276,21 +294,22 @@ class EncryptionService {
 
   /// ChaCha20-Poly1305 AEAD encryption.
   String _encryptChaCha20Poly1305(
-      Uint8List plainData, Uint8List key, Uint8List nonce) {
-    final aead = ChaCha20Poly1305(ChaCha7539Engine(), Poly1305())
-      ..init(
-        true,
-        AEADParameters(
-          KeyParameter(key),
-          128, // MAC size in bits
-          nonce,
-          Uint8List(0), // AAD
-        ),
-      );
+    Uint8List plainData,
+    Uint8List key,
+    Uint8List nonce,
+  ) {
+    final aead = ChaCha20Poly1305(ChaCha7539Engine(), Poly1305())..init(
+      true,
+      AEADParameters(
+        KeyParameter(key),
+        128, // MAC size in bits
+        nonce,
+        Uint8List(0), // AAD
+      ),
+    );
 
     final output = Uint8List(plainData.length + 16); // +16 for MAC tag
-    final len =
-        aead.processBytes(plainData, 0, plainData.length, output, 0);
+    final len = aead.processBytes(plainData, 0, plainData.length, output, 0);
     aead.doFinal(output, len);
 
     // Prepend nonce
@@ -306,20 +325,19 @@ class EncryptionService {
     final ciphertextWithTag = Uint8List.sublistView(combined, 12);
     final key = _deriveKey();
 
-    final aead = ChaCha20Poly1305(ChaCha7539Engine(), Poly1305())
-      ..init(
-        false,
-        AEADParameters(
-          KeyParameter(key),
-          128,
-          nonce,
-          Uint8List(0),
-        ),
-      );
+    final aead = ChaCha20Poly1305(
+      ChaCha7539Engine(),
+      Poly1305(),
+    )..init(false, AEADParameters(KeyParameter(key), 128, nonce, Uint8List(0)));
 
     final output = Uint8List(ciphertextWithTag.length - 16);
     final len = aead.processBytes(
-        ciphertextWithTag, 0, ciphertextWithTag.length, output, 0);
+      ciphertextWithTag,
+      0,
+      ciphertextWithTag.length,
+      output,
+      0,
+    );
     aead.doFinal(output, len);
     return output;
   }
@@ -369,8 +387,7 @@ class EncryptionService {
     Uint8List data,
   ) {
     final cbc = CBCBlockCipher(engine)
-      ..init(encrypt,
-          ParametersWithIV(KeyParameter(key), iv));
+      ..init(encrypt, ParametersWithIV(KeyParameter(key), iv));
 
     if (encrypt) {
       // Add PKCS7 padding
@@ -501,17 +518,15 @@ class EncryptionService {
   // ─── Secret Passphrase Protection ───────────────────────────────
 
   /// Encrypt the shared secret at rest with a passphrase.
-  static String encryptSecretWithPassphrase(
-    String secret,
-    String passphrase,
-  ) {
+  static String encryptSecretWithPassphrase(String secret, String passphrase) {
     final salt = List<int>.generate(16, (_) => Random.secure().nextInt(256));
-    final pbkdf2 = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
-      ..init(Pbkdf2Parameters(
+    final pbkdf2 = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))..init(
+      Pbkdf2Parameters(
         Uint8List.fromList(salt),
         AppConstants.hmacIterations,
         32,
-      ));
+      ),
+    );
 
     final key = pbkdf2.process(Uint8List.fromList(utf8.encode(passphrase)));
     final iv = List<int>.generate(16, (_) => Random.secure().nextInt(256));
@@ -533,12 +548,13 @@ class EncryptionService {
     final iv = combined.sublist(16, 32);
     final ciphertext = combined.sublist(32);
 
-    final pbkdf2 = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
-      ..init(Pbkdf2Parameters(
+    final pbkdf2 = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))..init(
+      Pbkdf2Parameters(
         Uint8List.fromList(salt),
         AppConstants.hmacIterations,
         32,
-      ));
+      ),
+    );
 
     final key = pbkdf2.process(Uint8List.fromList(utf8.encode(passphrase)));
     final encrypter = Encrypter(AES(Key(key), mode: AESMode.cbc));
