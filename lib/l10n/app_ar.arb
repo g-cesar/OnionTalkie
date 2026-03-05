@@ -416,5 +416,8 @@
   "languageZh": "中文",
   "languageJa": "日本語",
   "languageKo": "한국어",
+  "exitAppTitle": "الخروج من التطبيق",
+  "exitAppConfirm": "هل تريد إغلاق OnionTalkie بالكامل؟ سيتم إنهاء جميع الاتصالات وخدمة تور.",
+  "exit": "خروج",
   "languageSystem": "لغة النظام"
 }

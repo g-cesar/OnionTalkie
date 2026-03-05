@@ -17,8 +17,11 @@ import '../../screens/settings/voice_changer_screen.dart';
 import '../../screens/shared_secret_screen.dart';
 import '../../screens/status_screen.dart';
 
+/// Provider that tracks the current navigation path.
+final currentPathProvider = StateProvider<String>((ref) => '/');
+
 final appRouterProvider = Provider<GoRouter>((ref) {
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: '/',
     routes: [
       GoRoute(
@@ -38,10 +41,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 address = extra['address'] as String?;
                 contactId = extra['contactId'] as String?;
               }
-              return CallScreen(
-                remoteAddress: address,
-                contactId: contactId,
-              );
+              return CallScreen(remoteAddress: address, contactId: contactId);
             },
           ),
           GoRoute(
@@ -106,13 +106,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
     ],
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Text(
-          'Page not found: ${state.error}',
-          style: Theme.of(context).textTheme.titleMedium,
+    errorBuilder:
+        (context, state) => Scaffold(
+          body: Center(
+            child: Text(
+              'Page not found: ${state.error}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
         ),
-      ),
-    ),
   );
+
+  // Update currentPathProvider whenever the route changes
+  router.routerDelegate.addListener(() {
+    final String location =
+        router.routerDelegate.currentConfiguration.last.matchedLocation;
+    ref.read(currentPathProvider.notifier).state = location;
+  });
+
+  return router;
 });

@@ -415,6 +415,9 @@
   "languageFa": "فارسی",
   "languageZh": "中文",
   "languageJa": "日本語",
-  "languageKo": "한국어",
-  "languageSystem": "По умолчанию системный"
+  "languageKo": "Корейский",
+  "exitAppTitle": "Exit App",
+  "exitAppConfirm": "Do you want to completely close OnionTalkie? All connections and the Tor service will be terminated.",
+  "exit": "Exit",
+  "languageSystem": "Системный по умолчанию"
 }

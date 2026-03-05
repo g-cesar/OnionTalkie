@@ -7,6 +7,7 @@ import '../models/tor_status.dart';
 import '../providers/providers.dart';
 import '../providers/settings_provider.dart';
 import '../providers/tor_provider.dart';
+import '../models/app_settings.dart';
 
 class StatusScreen extends ConsumerWidget {
   const StatusScreen({super.key});
@@ -19,130 +20,121 @@ class StatusScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(S.of(context).statusScreenTitle),
-      ),
+      appBar: AppBar(title: Text(S.of(context).statusScreenTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Tor Status
-          _buildSection(
-            theme,
-            S.of(context).tor,
-            Icons.security,
-            [
+          _buildSection(theme, S.of(context).tor, Icons.security, [
+            _buildStatusRow(
+              theme,
+              S.of(context).statusLabel,
+              _torStateLabel(context, torStatus.state),
+              _torStateColor(torStatus.state),
+            ),
+            _buildStatusRow(
+              theme,
+              S.of(context).bootstrap,
+              '${torStatus.bootstrapProgress}%',
+              torStatus.bootstrapProgress == 100
+                  ? AppColors.mint
+                  : AppColors.yellow,
+            ),
+            _buildStatusRow(
+              theme,
+              S.of(context).onionAddressLabel,
+              torStatus.onionAddress ?? S.of(context).notAvailable,
+              torStatus.onionAddress != null
+                  ? AppColors.mint
+                  : AppColors.textSecondary,
+            ),
+            _buildStatusRow(
+              theme,
+              S.of(context).snowflake,
+              settings.snowflakeEnabled
+                  ? S.of(context).enabled
+                  : S.of(context).disabled,
+              settings.snowflakeEnabled
+                  ? AppColors.yellow
+                  : AppColors.textSecondary,
+            ),
+            if (settings.excludeNodes.isNotEmpty)
               _buildStatusRow(
                 theme,
-                S.of(context).statusLabel,
-                _torStateLabel(context, torStatus.state),
-                _torStateColor(torStatus.state),
+                S.of(context).excludedNodes,
+                settings.excludeNodes,
+                AppColors.yellow,
               ),
-              _buildStatusRow(
-                theme,
-                S.of(context).bootstrap,
-                '${torStatus.bootstrapProgress}%',
-                torStatus.bootstrapProgress == 100 ? AppColors.mint : AppColors.yellow,
-              ),
-              _buildStatusRow(
-                theme,
-                S.of(context).onionAddressLabel,
-                torStatus.onionAddress ?? S.of(context).notAvailable,
-                torStatus.onionAddress != null ? AppColors.mint : AppColors.textSecondary,
-              ),
-              _buildStatusRow(
-                theme,
-                S.of(context).snowflake,
-                settings.snowflakeEnabled ? S.of(context).enabled : S.of(context).disabled,
-                settings.snowflakeEnabled ? AppColors.yellow : AppColors.textSecondary,
-              ),
-              if (settings.excludeNodes.isNotEmpty)
-                _buildStatusRow(
-                  theme,
-                  S.of(context).excludedNodes,
-                  settings.excludeNodes,
-                  AppColors.yellow,
-                ),
-            ],
-          ),
+          ]),
 
           const SizedBox(height: 16),
 
           // Encryption Status
-          _buildSection(
-            theme,
-            S.of(context).encryption,
-            Icons.lock,
-            [
-              _buildStatusRow(
-                theme,
-                S.of(context).cipher,
-                settings.cipher.toUpperCase(),
-                AppColors.yellow,
-              ),
+          _buildSection(theme, S.of(context).encryption, Icons.lock, [
+            _buildStatusRow(
+              theme,
+              S.of(context).cipher,
+              settings.cipher.toUpperCase(),
+              AppColors.yellow,
+            ),
+            if (settings.keyExchangeMode == KeyExchangeMode.manual)
               _buildStatusRow(
                 theme,
                 S.of(context).sharedSecretStatus,
-                encryption.hasSecret ? S.of(context).configured : S.of(context).notConfigured,
+                encryption.hasSecret
+                    ? S.of(context).configured
+                    : S.of(context).notConfigured,
                 encryption.hasSecret ? AppColors.mint : AppColors.coral,
               ),
-              _buildStatusRow(
-                theme,
-                'HMAC',
-                settings.hmacEnabled ? S.of(context).enabled : S.of(context).disabled,
-                settings.hmacEnabled ? AppColors.mint : AppColors.textSecondary,
-              ),
-            ],
-          ),
+            _buildStatusRow(
+              theme,
+              'HMAC',
+              settings.hmacEnabled
+                  ? S.of(context).enabled
+                  : S.of(context).disabled,
+              settings.hmacEnabled ? AppColors.mint : AppColors.textSecondary,
+            ),
+          ]),
 
           const SizedBox(height: 16),
 
           // Audio Status
-          _buildSection(
-            theme,
-            S.of(context).audio,
-            Icons.mic,
-            [
-              _buildStatusRow(
-                theme,
-                S.of(context).opusBitrate,
-                '${settings.opusBitrate} kbps',
-                AppColors.yellow,
-              ),
-              _buildStatusRow(
-                theme,
-                S.of(context).sampleRate,
-                '${settings.sampleRate} Hz',
-                AppColors.yellow,
-              ),
-              _buildStatusRow(
-                theme,
-                S.of(context).voiceChanger,
-                settings.voiceChangerPreset.name,
-                settings.voiceChangerPreset.name != 'off'
-                    ? AppColors.mint
-                    : AppColors.textSecondary,
-              ),
-            ],
-          ),
+          _buildSection(theme, S.of(context).audio, Icons.mic, [
+            _buildStatusRow(
+              theme,
+              S.of(context).opusBitrate,
+              '${settings.opusBitrate} kbps',
+              AppColors.yellow,
+            ),
+            _buildStatusRow(
+              theme,
+              S.of(context).sampleRate,
+              '${settings.sampleRate} Hz',
+              AppColors.yellow,
+            ),
+            _buildStatusRow(
+              theme,
+              S.of(context).voiceChanger,
+              settings.voiceChangerPreset.name,
+              settings.voiceChangerPreset.name != 'off'
+                  ? AppColors.mint
+                  : AppColors.textSecondary,
+            ),
+          ]),
 
           const SizedBox(height: 16),
 
           // Error log
           if (torStatus.errorMessage != null)
-            _buildSection(
-              theme,
-              S.of(context).errors,
-              Icons.error_outline,
-              [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    torStatus.errorMessage!,
-                    style: TextStyle(color: theme.colorScheme.error),
-                  ),
+            _buildSection(theme, S.of(context).errors, Icons.error_outline, [
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  torStatus.errorMessage!,
+                  style: TextStyle(color: theme.colorScheme.error),
                 ),
-              ],
-            ),
+              ),
+            ]),
         ],
       ),
     );

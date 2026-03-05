@@ -1,15 +1,7 @@
 import 'dart:convert';
 
 /// Voice changer preset.
-enum VoiceChangerPreset {
-  off,
-  deep,
-  high,
-  robot,
-  echo,
-  whisper,
-  custom,
-}
+enum VoiceChangerPreset { off, deep, high, robot, echo, whisper, custom }
 
 /// Key exchange mode.
 enum KeyExchangeMode {
@@ -21,15 +13,7 @@ enum KeyExchangeMode {
 }
 
 /// PTT chime preset.
-enum PttChimePreset {
-  off,
-  tone,
-  doubleTone,
-  chirp,
-  ding,
-  click,
-  custom,
-}
+enum PttChimePreset { off, tone, doubleTone, chirp, ding, click, custom }
 
 /// Application settings model.
 class AppSettings {
@@ -71,13 +55,13 @@ class AppSettings {
   const AppSettings({
     this.opusBitrate = 16,
     this.sampleRate = 8000,
-    this.cipher = 'aes-256-cbc',
-    this.hmacEnabled = false,
-    this.secretPassphraseEnabled = false,
-    this.keyExchangeMode = KeyExchangeMode.manual,
+    this.cipher = 'aes-256-ctr',
+    this.hmacEnabled = true,
+    this.secretPassphraseEnabled = true,
+    this.keyExchangeMode = KeyExchangeMode.pake,
     this.snowflakeEnabled = false,
     this.excludeNodes = '',
-    this.showCircuitPath = false,
+    this.showCircuitPath = true,
     this.circuitRefreshSeconds = 60,
     this.autoListen = false,
     this.pttChime = PttChimePreset.off,
@@ -120,12 +104,14 @@ class AppSettings {
       sampleRate: sampleRate ?? this.sampleRate,
       cipher: cipher ?? this.cipher,
       hmacEnabled: hmacEnabled ?? this.hmacEnabled,
-      secretPassphraseEnabled: secretPassphraseEnabled ?? this.secretPassphraseEnabled,
+      secretPassphraseEnabled:
+          secretPassphraseEnabled ?? this.secretPassphraseEnabled,
       keyExchangeMode: keyExchangeMode ?? this.keyExchangeMode,
       snowflakeEnabled: snowflakeEnabled ?? this.snowflakeEnabled,
       excludeNodes: excludeNodes ?? this.excludeNodes,
       showCircuitPath: showCircuitPath ?? this.showCircuitPath,
-      circuitRefreshSeconds: circuitRefreshSeconds ?? this.circuitRefreshSeconds,
+      circuitRefreshSeconds:
+          circuitRefreshSeconds ?? this.circuitRefreshSeconds,
       autoListen: autoListen ?? this.autoListen,
       pttChime: pttChime ?? this.pttChime,
       voiceChangerPreset: voiceChangerPreset ?? this.voiceChangerPreset,
@@ -168,16 +154,16 @@ class AppSettings {
     return AppSettings(
       opusBitrate: json['opusBitrate'] as int? ?? 16,
       sampleRate: json['sampleRate'] as int? ?? 8000,
-      cipher: json['cipher'] as String? ?? 'aes-256-cbc',
-      hmacEnabled: json['hmacEnabled'] as bool? ?? false,
-      secretPassphraseEnabled: json['secretPassphraseEnabled'] as bool? ?? false,
+      cipher: json['cipher'] as String? ?? 'aes-256-ctr',
+      hmacEnabled: json['hmacEnabled'] as bool? ?? true,
+      secretPassphraseEnabled: json['secretPassphraseEnabled'] as bool? ?? true,
       keyExchangeMode: KeyExchangeMode.values.firstWhere(
         (e) => e.name == json['keyExchangeMode'],
-        orElse: () => KeyExchangeMode.manual,
+        orElse: () => KeyExchangeMode.pake,
       ),
       snowflakeEnabled: json['snowflakeEnabled'] as bool? ?? false,
       excludeNodes: json['excludeNodes'] as String? ?? '',
-      showCircuitPath: json['showCircuitPath'] as bool? ?? false,
+      showCircuitPath: json['showCircuitPath'] as bool? ?? true,
       circuitRefreshSeconds: json['circuitRefreshSeconds'] as int? ?? 60,
       autoListen: json['autoListen'] as bool? ?? false,
       pttChime: PttChimePreset.values.firstWhere(

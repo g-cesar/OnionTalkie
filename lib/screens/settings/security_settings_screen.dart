@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/constants/app_constants.dart';
 import '../../providers/settings_provider.dart';
+import '../../models/app_settings.dart';
 
 class SecuritySettingsScreen extends ConsumerWidget {
   const SecuritySettingsScreen({super.key});
@@ -15,9 +16,7 @@ class SecuritySettingsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(S.of(context).securityTitle),
-      ),
+      appBar: AppBar(title: Text(S.of(context).securityTitle)),
       body: ListView(
         children: [
           // Cipher Selection
@@ -56,11 +55,15 @@ class SecuritySettingsScreen extends ConsumerWidget {
                     }
                   },
                   secondary: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: cipher.keyBits >= 256
-                          ? AppColors.mint.withValues(alpha: 0.1)
-                          : cipher.keyBits >= 192
+                      color:
+                          cipher.keyBits >= 256
+                              ? AppColors.mint.withValues(alpha: 0.1)
+                              : cipher.keyBits >= 192
                               ? AppColors.yellow.withValues(alpha: 0.1)
                               : AppColors.coral.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -70,9 +73,10 @@ class SecuritySettingsScreen extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: cipher.keyBits >= 256
-                            ? AppColors.mint
-                            : cipher.keyBits >= 192
+                        color:
+                            cipher.keyBits >= 256
+                                ? AppColors.mint
+                                : cipher.keyBits >= 192
                                 ? AppColors.yellow
                                 : AppColors.coral,
                       ),
@@ -84,13 +88,18 @@ class SecuritySettingsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(72, 0, 16, 8),
                     child: Row(
                       children: [
-                        Icon(Icons.info_outline,
-                            size: 14,
-                            color: theme.colorScheme.onSurfaceVariant),
+                        Icon(
+                          Icons.info_outline,
+                          size: 14,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            localizedCipherDescription(cipher.name, S.of(context)),
+                            localizedCipherDescription(
+                              cipher.name,
+                              S.of(context),
+                            ),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                               fontStyle: FontStyle.italic,
@@ -110,9 +119,7 @@ class SecuritySettingsScreen extends ConsumerWidget {
           SwitchListTile(
             secondary: const Icon(Icons.verified_user),
             title: Text(S.of(context).hmacAuth),
-            subtitle: Text(
-              S.of(context).hmacAuthSubtitle,
-            ),
+            subtitle: Text(S.of(context).hmacAuthSubtitle),
             value: settings.hmacEnabled,
             onChanged: (value) {
               ref.read(settingsProvider.notifier).setHmacEnabled(value);
@@ -127,7 +134,9 @@ class SecuritySettingsScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: AppColors.yellow.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.yellow.withValues(alpha: 0.18)),
+                  border: Border.all(
+                    color: AppColors.yellow.withValues(alpha: 0.18),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -148,18 +157,22 @@ class SecuritySettingsScreen extends ConsumerWidget {
 
           const Divider(height: 32),
 
-          // Secret passphrase protection
-          SwitchListTile(
-            secondary: const Icon(Icons.enhanced_encryption),
-            title: Text(S.of(context).passphraseProtection),
-            subtitle: Text(
-              S.of(context).passphraseProtectionSubtitle,
+          const Divider(height: 32),
+
+          // Secret passphrase protection - ONLY IN MANUAL MODE
+          if (settings.keyExchangeMode == KeyExchangeMode.manual) ...[
+            SwitchListTile(
+              secondary: const Icon(Icons.enhanced_encryption),
+              title: Text(S.of(context).passphraseProtection),
+              subtitle: Text(S.of(context).passphraseProtectionSubtitle),
+              value: settings.secretPassphraseEnabled,
+              onChanged: (value) {
+                ref
+                    .read(settingsProvider.notifier)
+                    .setSecretPassphraseEnabled(value);
+              },
             ),
-            value: settings.secretPassphraseEnabled,
-            onChanged: (value) {
-              ref.read(settingsProvider.notifier).setSecretPassphraseEnabled(value);
-            },
-          ),
+          ],
 
           const SizedBox(height: 32),
         ],

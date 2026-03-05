@@ -441,5 +441,8 @@
   "languageZh": "中文",
   "languageJa": "日本語",
   "languageKo": "한국어",
-  "languageSystem": "Predefinita di sistema"
+  "languageSystem": "Predefinita di sistema",
+  "exitAppTitle": "Esci dall'app",
+  "exitAppConfirm": "Vuoi chiudere completamente OnionTalkie? Tutte le connessioni e il servizio Tor verranno terminate.",
+  "exit": "Esci"
 }

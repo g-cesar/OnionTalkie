@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,172 +44,185 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          children: [
-            const SizedBox(height: 16),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldExit = await _showExitConfirmation(context);
+        if (shouldExit == true) {
+          // Perform cleanup
+          await ref.read(torProvider.notifier).stop();
+          // Exit the app completely
+          exit(0);
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            children: [
+              const SizedBox(height: 16),
 
-            // ── Header row ──
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        S.of(context).appTitle,
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: cs.onSurface,
+              // ── Header row ──
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          S.of(context).appTitle,
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: cs.onSurface,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        S.of(context).appSubtitle,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
+                        const SizedBox(height: 2),
+                        Text(
+                          S.of(context).appSubtitle,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                _HeaderIconButton(
-                  icon: Icons.assessment_outlined,
-                  onTap: () => context.push('/status'),
-                ),
-                const SizedBox(width: 8),
-                _HeaderIconButton(
-                  icon: Icons.settings_outlined,
-                  onTap: () => context.push('/settings'),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // ── Status Banner ──
-            StatusCard(torStatus: torStatus),
-
-            // ── Circuit Path (when Tor connected + enabled) ──
-            if (torStatus.state == TorConnectionState.connected &&
-                settings.showCircuitPath &&
-                circuitHops != null)
-              CircuitPathWidget(hops: circuitHops),
-
-            const SizedBox(height: 28),
-
-            // ── Section label ──
-            _SectionLabel(label: S.of(context).quickActions),
-
-            const SizedBox(height: 14),
-
-            // ── Bento Grid ──
-            Column(
-              children: [
-                // ── Primary row: Ascolta + Chiama ──
-                SizedBox(
-                  height: 160,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: MenuActionCard(
-                          icon: Icons.hearing,
-                          title: S.of(context).listen,
-                          subtitle: S.of(context).listenSubtitle,
-                          color: AppColors.yellow,
-                          onTap: torStatus.isReady
-                              ? () => context.push('/call')
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: MenuActionCard(
-                          icon: Icons.call,
-                          title: S.of(context).call,
-                          subtitle: S.of(context).callSubtitle,
-                          color: AppColors.mint,
-                          onTap: torStatus.isReady
-                              ? () => context.push('/dial')
-                              : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                // ── Secondary row: Contatti + Indirizzo (compact) ──
-                SizedBox(
-                  height: 72,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _ContactsCompactCard(
-                          onTap: () => context.push('/contacts'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: MenuActionCardCompact(
-                          icon: Icons.qr_code,
-                          title: S.of(context).address,
-                          subtitle: S.of(context).addressSubtitle,
-                          iconColor: AppColors.yellow,
-                          textColor: AppColors.yellow,
-                          backgroundColor: Colors.white,
-                          onTap: torStatus.isReady
-                              ? () => context.push('/onion-address')
-                              : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 28),
-
-            // ── Section label ──
-            Row(
-              children: [
-                Expanded(child: _SectionLabel(label: S.of(context).torAndSystem)),
-                if (torStatus.isReady)
-                  TextButton.icon(
-                    onPressed: () => context.push('/status'),
-                    icon: Icon(Icons.north_east, size: 16, color: cs.primary),
-                    label: Text(
-                      S.of(context).status,
-                      style: TextStyle(color: cs.primary),
+                      ],
                     ),
                   ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            // ── List tiles ──
-            _buildTorActionTile(context, torStatus),
-            _buildListTile(
-              context,
-              icon: Icons.assessment,
-              title: S.of(context).systemStatus,
-              subtitle: S.of(context).systemStatusSubtitle,
-              onTap: () => context.push('/status'),
-            ),
-            if (torStatus.isReady)
-              _buildListTile(
-                context,
-                icon: Icons.refresh,
-                title: S.of(context).rotateOnion,
-                subtitle: S.of(context).rotateOnionSubtitle,
-                onTap: () => _showRotateConfirmation(context),
+                  _HeaderIconButton(
+                    icon: Icons.settings_outlined,
+                    onTap: () => context.push('/settings'),
+                  ),
+                ],
               ),
 
-            const SizedBox(height: 32),
-          ],
+              const SizedBox(height: 24),
+
+              // ── Status Banner ──
+              StatusCard(torStatus: torStatus),
+
+              // ── Circuit Path (when Tor connected + enabled) ──
+              if (torStatus.state == TorConnectionState.connected &&
+                  settings.showCircuitPath &&
+                  circuitHops != null)
+                CircuitPathWidget(hops: circuitHops),
+
+              const SizedBox(height: 28),
+
+              // ── Section label ──
+              _SectionLabel(label: S.of(context).quickActions),
+
+              const SizedBox(height: 14),
+
+              // ── Bento Grid ──
+              Column(
+                children: [
+                  // ── Primary row: Ascolta + Chiama ──
+                  SizedBox(
+                    height: 160,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: MenuActionCard(
+                            icon: Icons.hearing,
+                            title: S.of(context).listen,
+                            subtitle: S.of(context).listenSubtitle,
+                            color: AppColors.yellow,
+                            onTap:
+                                torStatus.isReady
+                                    ? () => context.push('/call')
+                                    : null,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: MenuActionCard(
+                            icon: Icons.call,
+                            title: S.of(context).call,
+                            subtitle: S.of(context).callSubtitle,
+                            color: AppColors.mint,
+                            onTap:
+                                torStatus.isReady
+                                    ? () => context.push('/dial')
+                                    : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // ── Secondary row: Contatti + Indirizzo (compact) ──
+                  SizedBox(
+                    height: 72,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _ContactsCompactCard(
+                            onTap: () => context.push('/contacts'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: MenuActionCardCompact(
+                            icon: Icons.qr_code,
+                            title: S.of(context).address,
+                            subtitle: S.of(context).addressSubtitle,
+                            iconColor: AppColors.yellow,
+                            textColor: AppColors.yellow,
+                            backgroundColor: Colors.white,
+                            onTap:
+                                torStatus.isReady
+                                    ? () => context.push('/onion-address')
+                                    : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 28),
+
+              // ── Section label ──
+              Row(
+                children: [
+                  Expanded(
+                    child: _SectionLabel(label: S.of(context).torAndSystem),
+                  ),
+                  if (torStatus.isReady)
+                    TextButton.icon(
+                      onPressed: () => context.push('/status'),
+                      icon: Icon(Icons.north_east, size: 16, color: cs.primary),
+                      label: Text(
+                        S.of(context).status,
+                        style: TextStyle(color: cs.primary),
+                      ),
+                    ),
+                ],
+              ),
+
+              const SizedBox(height: 10),
+
+              // ── List tiles ──
+              _buildTorActionTile(context, torStatus),
+              _buildListTile(
+                context,
+                icon: Icons.assessment,
+                title: S.of(context).systemStatus,
+                subtitle: S.of(context).systemStatusSubtitle,
+                onTap: () => context.push('/status'),
+              ),
+              if (torStatus.isReady)
+                _buildListTile(
+                  context,
+                  icon: Icons.refresh,
+                  title: S.of(context).rotateOnion,
+                  subtitle: S.of(context).rotateOnionSubtitle,
+                  onTap: () => _showRotateConfirmation(context),
+                ),
+
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
       ),
     );
@@ -224,24 +238,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           icon: Icons.download,
           title: S.of(context).installTor,
           subtitle: S.of(context).installTorSubtitle,
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const TorInstallScreen()),
-          ),
+          onTap:
+              () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const TorInstallScreen()),
+              ),
         );
       case TorConnectionState.stopped:
       case TorConnectionState.error:
-        return _buildListTile(
-          context,
-          icon: Icons.play_arrow,
-          title: S.of(context).startTor,
-          subtitle: torStatus.errorMessage ?? S.of(context).startTorSubtitle,
-          onTap: () {
-            final settings = ref.read(settingsProvider);
-            ref.read(torProvider.notifier).start(
-              snowflake: settings.snowflakeEnabled,
-              excludeNodes: settings.excludeNodes,
-            );
-          },
+        // Apply custom active 'primary-like' styling for the "Start Tor" button
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Material(
+            color: Colors.white, // White background for emphasis
+            borderRadius: BorderRadius.circular(18),
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
+              leading: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.purple.withValues(
+                    alpha: 0.12,
+                  ), // Light purple background for icon
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(
+                  Icons.play_arrow,
+                  color: Colors.purple,
+                  size: 22,
+                ),
+              ),
+              title: Text(
+                S.of(context).startTor,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: Colors.purple, // Purple text for emphasis
+                ),
+              ),
+              subtitle: Text(
+                torStatus.errorMessage ?? S.of(context).startTorSubtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.purple.withValues(alpha: 0.8),
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right, color: Colors.purple),
+              onTap: () {
+                final settings = ref.read(settingsProvider);
+                ref
+                    .read(torProvider.notifier)
+                    .start(
+                      snowflake: settings.snowflakeEnabled,
+                      excludeNodes: settings.excludeNodes,
+                    );
+              },
+            ),
+          ),
         );
       case TorConnectionState.starting:
       case TorConnectionState.bootstrapping:
@@ -249,7 +306,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           context,
           icon: Icons.hourglass_top,
           title: S.of(context).torStarting,
-          subtitle: S.of(context).torBootstrapProgress(torStatus.bootstrapProgress),
+          subtitle: S
+              .of(context)
+              .torBootstrapProgress(torStatus.bootstrapProgress),
           trailing: SizedBox(
             width: 24,
             height: 24,
@@ -260,12 +319,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         );
       case TorConnectionState.connected:
-        return _buildListTile(
-          context,
-          icon: Icons.stop,
-          title: S.of(context).stopTor,
-          subtitle: S.of(context).stopTorSubtitle,
-          onTap: () => ref.read(torProvider.notifier).stop(),
+        // Use red background and white text when connected to indicate "Stop"
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Material(
+            color: Colors.red, // Red background
+            borderRadius: BorderRadius.circular(18),
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
+              leading: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(
+                    alpha: 0.2,
+                  ), // Subtle white background for icon
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(Icons.stop, color: Colors.white, size: 22),
+              ),
+              title: Text(
+                S.of(context).stopTor,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white, // White text
+                ),
+              ),
+              subtitle: Text(
+                S.of(context).stopTorSubtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right, color: Colors.white),
+              onTap: () => ref.read(torProvider.notifier).stop(),
+            ),
+          ),
         );
     }
   }
@@ -290,7 +385,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         borderRadius: BorderRadius.circular(18),
         clipBehavior: Clip.antiAlias,
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 4,
+          ),
           leading: Container(
             width: 42,
             height: 42,
@@ -314,7 +412,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               color: cs.onSurfaceVariant,
             ),
           ),
-          trailing: trailing ??
+          trailing:
+              trailing ??
               (onTap != null
                   ? Icon(Icons.chevron_right, color: cs.onSurfaceVariant)
                   : null),
@@ -324,28 +423,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // ─── Exit confirmation ───────────────────────────────────────────
+
+  Future<bool?> _showExitConfirmation(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(S.of(context).exitAppTitle),
+            content: Text(S.of(context).exitAppConfirm),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(S.of(context).cancel),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(S.of(context).exit),
+              ),
+            ],
+          ),
+    );
+  }
+
   // ─── Rotate confirmation ──────────────────────────────────────────
 
   void _showRotateConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(S.of(context).rotateOnionTitle),
-        content: Text(S.of(context).rotateOnionConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(S.of(context).cancel),
+      builder:
+          (context) => AlertDialog(
+            title: Text(S.of(context).rotateOnionTitle),
+            content: Text(S.of(context).rotateOnionConfirm),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(S.of(context).cancel),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ref.read(torProvider.notifier).rotateOnionAddress();
+                },
+                child: Text(S.of(context).rotate),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(torProvider.notifier).rotateOnionAddress();
-            },
-            child: Text(S.of(context).rotate),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -405,6 +529,9 @@ class _ContactsCompactCard extends ConsumerWidget {
     final count = contacts.length;
     final subtitle = S.of(context).contactCount(count);
 
+    final torStatus = ref.watch(torProvider);
+    final isReady = torStatus.isReady;
+
     return MenuActionCardCompact(
       icon: Icons.contacts,
       title: S.of(context).contacts,
@@ -412,7 +539,7 @@ class _ContactsCompactCard extends ConsumerWidget {
       iconColor: const Color(0xFF3A7BD5),
       textColor: const Color(0xFF3A7BD5),
       backgroundColor: Colors.white,
-      onTap: onTap,
+      onTap: isReady ? onTap : null,
     );
   }
 }
