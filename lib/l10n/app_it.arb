@@ -184,7 +184,7 @@
   "pttSound": "Suono PTT",
   "noSound": "Nessun suono",
   "info": "Info",
-  "versionInfo": "v1.0.0 — Comunicazione cifrata PTT su Tor",
+  "versionInfo": "v2.1.2 — Comunicazione cifrata PTT su Tor",
   "sourceCode": "Codice sorgente",
   "openSourceLicense": "Licenza open source",
 
@@ -431,5 +431,15 @@
   "languageSubtitle": "Lingua dell'interfaccia",
   "languageEn": "English",
   "languageIt": "Italiano",
+  "languageEs": "Español",
+  "languageFr": "Français",
+  "languageDe": "Deutsch",
+  "languagePt": "Português",
+  "languageRu": "Русский",
+  "languageAr": "العربية",
+  "languageFa": "فارسی",
+  "languageZh": "中文",
+  "languageJa": "日本語",
+  "languageKo": "한국어",
   "languageSystem": "Predefinita di sistema"
 }

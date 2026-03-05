@@ -325,6 +325,7 @@ class TorServiceWeb extends TorServiceBase {
   }
 
   /// Check if a peer is online via the relay.
+  @override
   Future<bool> isPeerOnline(String onionAddress) async {
     if (_relayChannel == null) return false;
 

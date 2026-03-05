@@ -15,9 +15,7 @@ class SettingsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(S.of(context).settings),
-      ),
+      appBar: AppBar(title: Text(S.of(context).settings)),
       body: ListView(
         children: [
           // Security Section
@@ -25,7 +23,9 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.lock),
             title: Text(S.of(context).security),
-            subtitle: Text('${S.of(context).cipher}: ${settings.cipher.toUpperCase()}'),
+            subtitle: Text(
+              '${S.of(context).cipher}: ${settings.cipher.toUpperCase()}',
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/security'),
           ),
@@ -39,7 +39,9 @@ class SettingsScreen extends ConsumerWidget {
             ),
             value: settings.keyExchangeMode == KeyExchangeMode.pake,
             onChanged: (value) {
-              ref.read(settingsProvider.notifier).setKeyExchangeMode(
+              ref
+                  .read(settingsProvider.notifier)
+                  .setKeyExchangeMode(
                     value ? KeyExchangeMode.pake : KeyExchangeMode.manual,
                   );
             },
@@ -52,16 +54,20 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.music_note),
             title: Text(S.of(context).audioSettings),
-            subtitle: Text('Opus ${settings.opusBitrate}kbps, ${settings.sampleRate}Hz'),
+            subtitle: Text(
+              'Opus ${settings.opusBitrate}kbps, ${settings.sampleRate}Hz',
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/audio'),
           ),
           ListTile(
             leading: const Icon(Icons.voice_chat),
             title: Text(S.of(context).voiceChangerTitle),
-            subtitle: Text(settings.voiceChangerPreset.name == 'off'
-                ? S.of(context).voiceChangerOff
-                : settings.voiceChangerPreset.name),
+            subtitle: Text(
+              settings.voiceChangerPreset.name == 'off'
+                  ? S.of(context).voiceChangerOff
+                  : settings.voiceChangerPreset.name,
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/voice-changer'),
           ),
@@ -73,9 +79,11 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.router),
             title: Text(S.of(context).torSettings),
-            subtitle: Text(settings.snowflakeEnabled
-                ? S.of(context).snowflakeEnabled
-                : S.of(context).directConnection),
+            subtitle: Text(
+              settings.snowflakeEnabled
+                  ? S.of(context).snowflakeEnabled
+                  : S.of(context).directConnection,
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/tor'),
           ),
@@ -87,17 +95,19 @@ class SettingsScreen extends ConsumerWidget {
           SwitchListTile(
             secondary: const Icon(Icons.notifications),
             title: Text(S.of(context).pttSound),
-            subtitle: Text(settings.pttChime.name == 'off'
-                ? S.of(context).noSound
-                : 'Preset: ${settings.pttChime.name}'),
+            subtitle: Text(
+              settings.pttChime.name == 'off'
+                  ? S.of(context).noSound
+                  : 'Preset: ${settings.pttChime.name}',
+            ),
             value: settings.pttChime.name != 'off',
             onChanged: (value) {
               // Toggle between off and tone
-              ref.read(settingsProvider.notifier).setPttChime(
-                value
-                    ? PttChimePreset.tone
-                    : PttChimePreset.off,
-              );
+              ref
+                  .read(settingsProvider.notifier)
+                  .setPttChime(
+                    value ? PttChimePreset.tone : PttChimePreset.off,
+                  );
             },
           ),
 
@@ -154,12 +164,36 @@ class SettingsScreen extends ConsumerWidget {
         return S.of(context).languageEn;
       case 'it':
         return S.of(context).languageIt;
+      case 'es':
+        return S.of(context).languageEs;
+      case 'fr':
+        return S.of(context).languageFr;
+      case 'de':
+        return S.of(context).languageDe;
+      case 'pt':
+        return S.of(context).languagePt;
+      case 'ru':
+        return S.of(context).languageRu;
+      case 'ar':
+        return S.of(context).languageAr;
+      case 'fa':
+        return S.of(context).languageFa;
+      case 'zh':
+        return S.of(context).languageZh;
+      case 'ja':
+        return S.of(context).languageJa;
+      case 'ko':
+        return S.of(context).languageKo;
       default:
         return S.of(context).languageSystem;
     }
   }
 
-  void _showLanguagePicker(BuildContext context, WidgetRef ref, String current) {
+  void _showLanguagePicker(
+    BuildContext context,
+    WidgetRef ref,
+    String current,
+  ) {
     showModalBottomSheet(
       context: context,
       builder: (ctx) {
@@ -183,28 +217,132 @@ class SettingsScreen extends ConsumerWidget {
                   Navigator.pop(ctx);
                 },
               ),
-              RadioListTile<String>(
-                title: Text(S.of(context).languageEn),
-                value: 'en',
-                groupValue: current,
-                onChanged: (v) {
-                  ref.read(settingsProvider.notifier).setLocale(v!);
-                  Navigator.pop(ctx);
-                },
-              ),
-              RadioListTile<String>(
-                title: Text(S.of(context).languageIt),
-                value: 'it',
-                groupValue: current,
-                onChanged: (v) {
-                  ref.read(settingsProvider.notifier).setLocale(v!);
-                  Navigator.pop(ctx);
-                },
+              Expanded(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    _buildLanguageItem(
+                      context,
+                      ref,
+                      S.of(context).languageEn,
+                      'en',
+                      current,
+                      ctx,
+                    ),
+                    _buildLanguageItem(
+                      context,
+                      ref,
+                      S.of(context).languageIt,
+                      'it',
+                      current,
+                      ctx,
+                    ),
+                    _buildLanguageItem(
+                      context,
+                      ref,
+                      S.of(context).languageEs,
+                      'es',
+                      current,
+                      ctx,
+                    ),
+                    _buildLanguageItem(
+                      context,
+                      ref,
+                      S.of(context).languageFr,
+                      'fr',
+                      current,
+                      ctx,
+                    ),
+                    _buildLanguageItem(
+                      context,
+                      ref,
+                      S.of(context).languageDe,
+                      'de',
+                      current,
+                      ctx,
+                    ),
+                    _buildLanguageItem(
+                      context,
+                      ref,
+                      S.of(context).languagePt,
+                      'pt',
+                      current,
+                      ctx,
+                    ),
+                    _buildLanguageItem(
+                      context,
+                      ref,
+                      S.of(context).languageRu,
+                      'ru',
+                      current,
+                      ctx,
+                    ),
+                    _buildLanguageItem(
+                      context,
+                      ref,
+                      S.of(context).languageAr,
+                      'ar',
+                      current,
+                      ctx,
+                    ),
+                    _buildLanguageItem(
+                      context,
+                      ref,
+                      S.of(context).languageFa,
+                      'fa',
+                      current,
+                      ctx,
+                    ),
+                    _buildLanguageItem(
+                      context,
+                      ref,
+                      S.of(context).languageZh,
+                      'zh',
+                      current,
+                      ctx,
+                    ),
+                    _buildLanguageItem(
+                      context,
+                      ref,
+                      S.of(context).languageJa,
+                      'ja',
+                      current,
+                      ctx,
+                    ),
+                    _buildLanguageItem(
+                      context,
+                      ref,
+                      S.of(context).languageKo,
+                      'ko',
+                      current,
+                      ctx,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
             ],
           ),
         );
+      },
+    );
+  }
+
+  Widget _buildLanguageItem(
+    BuildContext context,
+    WidgetRef ref,
+    String title,
+    String value,
+    String current,
+    BuildContext ctx,
+  ) {
+    return RadioListTile<String>(
+      title: Text(title),
+      value: value,
+      groupValue: current,
+      onChanged: (v) {
+        ref.read(settingsProvider.notifier).setLocale(v!);
+        Navigator.pop(ctx);
       },
     );
   }

@@ -191,7 +191,7 @@
   "pttSound": "PTT Sound",
   "noSound": "No sound",
   "info": "Info",
-  "versionInfo": "v1.0.0 — Encrypted PTT communication over Tor",
+  "versionInfo": "v2.1.2 — Encrypted PTT communication over Tor",
   "sourceCode": "Source code",
   "openSourceLicense": "Open source license",
 
@@ -442,5 +442,15 @@
   "languageSubtitle": "App interface language",
   "languageEn": "English",
   "languageIt": "Italiano",
+  "languageEs": "Español",
+  "languageFr": "Français",
+  "languageDe": "Deutsch",
+  "languagePt": "Português",
+  "languageRu": "Русский",
+  "languageAr": "العربية",
+  "languageFa": "فارسی",
+  "languageZh": "中文",
+  "languageJa": "日本語",
+  "languageKo": "한국어",
   "languageSystem": "System default"
 }

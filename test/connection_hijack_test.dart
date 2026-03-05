@@ -15,6 +15,10 @@ void main() {
       // 2. Establish first connection
       final socket1 = await Socket.connect('127.0.0.1', port);
 
+      // Send valid protocol data to promote socket1
+      socket1.write('ID:test_user\n');
+      await socket1.flush();
+
       // Wait for the service to recognize it's connected
       await Future.delayed(const Duration(milliseconds: 100));
       expect(service.isConnected, isTrue);
@@ -26,24 +30,21 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
 
       // socket2 should have been destroyed by the service
-      // We can check if it's still "alive" by trying to write to it
       bool socket2Closed = false;
-      try {
-        socket2.write('test');
-        await socket2.flush();
-        // On some platforms, write/flush might not throw immediately even if remote closed
-        // but the service should have called socket.destroy()
-      } catch (_) {
-        socket2Closed = true;
-      }
+      socket2.listen(
+        (_) {},
+        onDone: () => socket2Closed = true,
+        onError: (_) => socket2Closed = true,
+      );
 
+      // Give it time to receive the close event
+      await Future.delayed(const Duration(milliseconds: 100));
       // Cleanup
       await service.disconnect();
       await socket1.close();
       await socket2.close();
 
-      // If we can't reliably detect closure via write, the debugPrint in logs (verified manually)
-      // and the code logic itself is our primary verification.
+      expect(socket2Closed, isTrue);
     },
   );
 }

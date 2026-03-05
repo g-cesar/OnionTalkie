@@ -141,6 +141,9 @@ class CallNotifier extends StateNotifier<CallState> {
 
       await ForegroundListenService.startListening();
 
+      // Ensure HMAC is off before sending handshake messages
+      _connectionService.setHmac(enabled: false);
+
       // Send ID and CIPHER immediately so the responder can identify us
       // and load the SHARED SECRET before processing SPAKE2_PUB.
       final torStatus = _ref.read(torProvider);
@@ -419,9 +422,12 @@ class CallNotifier extends StateNotifier<CallState> {
       // Initiator: SPAKE2 complete → now send ID/CIPHER and go active
       final settings = _ref.read(settingsProvider);
       _sendIdAndGoActive(settings, pakeActive: true);
-      _checkEnableHmac();
     }
-    // Responder: will receive ID next → normal active transition
+
+    // For both initiator and responder: now that the SPAKE2 session key is set,
+    // check if we have all necessary info (remote ID, remote cipher) to enable HMAC.
+    // The responder usually has these already (ID-first), so this triggers HMAC for it.
+    _checkEnableHmac();
   }
 
   // ─── Audio / Text handlers ──────────────────────────────────────
@@ -469,6 +475,9 @@ class CallNotifier extends StateNotifier<CallState> {
     }
 
     debugPrint('CallNotifier: incoming call accepted — active');
+
+    // Now that the call is active, check if we can enable HMAC
+    _checkEnableHmac();
   }
 
   /// Handle remote party starting PTT transmission.

@@ -117,6 +117,7 @@ class ConnectionServiceNative extends ConnectionServiceBase {
     _serverSocket = await ServerSocket.bind(
       InternetAddress.loopbackIPv4,
       targetPort,
+      shared: true,
     );
     _actualPort = _serverSocket!.port;
 
@@ -139,13 +140,76 @@ class ConnectionServiceNative extends ConnectionServiceBase {
     });
   }
 
-  /// Accept an incoming (already-established) socket — no SOCKS5 needed.
+  /// Handle incoming sockets. We do not immediately lock `_isConnected` because
+  /// Tor periodically sends probes that connect and disconnect without sending data.
+  /// We wait for the first valid protocol message (`ID` or `SPAKE2_PUB`) before
+  /// promoting the socket to the active session.
   void _acceptSocket(Socket socket) {
-    _socket = socket;
-    _isConnected = true;
-    _handshakeComplete = true;
-    _lineBuffer = StringBuffer();
-    _setupSocketListener(socket);
+    debugPrint(
+      'ConnectionService: Incoming socket from ${socket.remoteAddress.address} (waiting for data)',
+    );
+
+    final tempBuffer = StringBuffer();
+    StreamSubscription<Uint8List>? tempSub;
+
+    tempSub = socket.listen(
+      (data) {
+        if (_isConnected && _socket != socket) {
+          // Another incoming socket proved itself first.
+          tempSub?.cancel();
+          socket.destroy();
+          return;
+        }
+
+        final text = utf8.decode(data, allowMalformed: true);
+
+        if (!_isConnected) {
+          tempBuffer.write(text);
+          final accumulated = tempBuffer.toString();
+
+          if (accumulated.contains(AppConstants.protoId) ||
+              accumulated.contains(AppConstants.protoSpake2Pub)) {
+            // This socket sent valid protocol data. Promote it!
+            _socketSubscription?.cancel();
+            _socketSubscription = tempSub;
+            _socket = socket;
+            _isConnected = true;
+            _handshakeComplete = true; // SOCKS5 not needed for incoming
+            _lineBuffer = tempBuffer;
+
+            debugPrint(
+              'ConnectionService: Incoming socket promoted to active connection',
+            );
+            _processIncomingData(''); // Process the accumulated data
+          } else if (accumulated.length > 2048) {
+            // Drop suspected garbage or port scanner
+            tempSub?.cancel();
+            socket.destroy();
+          }
+        } else if (_socket == socket) {
+          // Normal active processing
+          _processIncomingData(text);
+        }
+      },
+      onError: (error) {
+        if (_socket == socket) {
+          debugPrint('ConnectionService: Socket error: $error');
+          _isConnected = false;
+          _messageController.add(const MapEntry('ERROR', 'Connection error'));
+        }
+        tempSub?.cancel();
+        socket.destroy();
+      },
+      onDone: () {
+        if (_socket == socket) {
+          debugPrint('ConnectionService: Socket closed');
+          _isConnected = false;
+          _messageController.add(const MapEntry('DISCONNECTED', ''));
+        }
+        tempSub?.cancel();
+        socket.destroy();
+      },
+    );
   }
 
   // ────────────────────────────── Outgoing ──────────────────────────────────
@@ -404,6 +468,7 @@ class ConnectionServiceNative extends ConnectionServiceBase {
 
     _isConnected = false;
     _handshakeComplete = false;
+    setHmac(enabled: false, key: '');
     _readBuffer.clear();
     await _socketSubscription?.cancel();
     _socketSubscription = null;

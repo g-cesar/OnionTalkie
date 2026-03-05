@@ -22,12 +22,14 @@ class OnionTalkieApp extends ConsumerWidget {
         settings.locale.isEmpty ? null : Locale(settings.locale);
 
     // Force dark status / navigation bars
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: AppColors.darkBg,
-      systemNavigationBarIconBrightness: Brightness.light,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: AppColors.darkBg,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
 
     return WithForegroundTask(
       child: MaterialApp.router(
@@ -40,6 +42,17 @@ class OnionTalkieApp extends ConsumerWidget {
         localizationsDelegates: S.localizationsDelegates,
         supportedLocales: S.supportedLocales,
         locale: overrideLocale,
+        localeResolutionCallback: (locale, supportedLocales) {
+          if (locale != null) {
+            for (var supportedLocale in supportedLocales) {
+              if (supportedLocale.languageCode == locale.languageCode) {
+                return supportedLocale;
+              }
+            }
+          }
+          // Default fallback to English
+          return const Locale('en', '');
+        },
       ),
     );
   }
