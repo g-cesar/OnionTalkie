@@ -95,6 +95,8 @@
   "dialInstruction": "발신할 .onion 주소를\n입력하세요",
   "quickContacts": "빠른 연락처",
   "enterAddress": "직접 입력",
+  "refreshStatus": "상태 새로고침",
+  "refreshingStatus": "상태 새로고침 중...",
   "myAddress": "내 주소",
   "yourOnionAddress": "내 Onion 주소",
   "qrScannerNote": "http:// 접두사는 통화 시 자동으로 제거됩니다.",

@@ -19,30 +19,65 @@ class ContactsScreen extends ConsumerWidget {
     final torStatus = ref.watch(torProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(S.of(context).contactsTitle)),
-      body:
-          contacts.isEmpty
-              ? _buildEmptyState(context)
-              : ListView.builder(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+      appBar: AppBar(
+        title: Text(S.of(context).contactsTitle),
+        actions: [
+          if (contacts.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: S.of(context).refreshStatus,
+              onPressed: () {
+                for (final contact in contacts) {
+                  ref.invalidate(onlineStatusProvider(contact.onionAddress));
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(S.of(context).refreshingStatus),
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          for (final contact in contacts) {
+            ref.invalidate(onlineStatusProvider(contact.onionAddress));
+          }
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        child:
+            contacts.isEmpty
+                ? SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.height - 100,
+                    child: _buildEmptyState(context),
+                  ),
+                )
+                : ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  itemCount: contacts.length,
+                  itemBuilder: (context, index) {
+                    final contact = contacts[index];
+                    return _ContactTile(
+                      contact: contact,
+                      torReady: torStatus.isReady,
+                      onCall:
+                          torStatus.isReady
+                              ? () => _callContact(context, ref, contact)
+                              : null,
+                      onTap:
+                          () =>
+                              context.push('/contacts/edit', extra: contact.id),
+                    );
+                  },
                 ),
-                itemCount: contacts.length,
-                itemBuilder: (context, index) {
-                  final contact = contacts[index];
-                  return _ContactTile(
-                    contact: contact,
-                    torReady: torStatus.isReady,
-                    onCall:
-                        torStatus.isReady
-                            ? () => _callContact(context, ref, contact)
-                            : null,
-                    onTap:
-                        () => context.push('/contacts/edit', extra: contact.id),
-                  );
-                },
-              ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/contacts/add'),
         backgroundColor: AppColors.yellow,
@@ -301,6 +336,7 @@ class _OnlineDot extends StatelessWidget {
     if (asyncValue == null) return const SizedBox.shrink();
 
     return asyncValue!.when(
+      skipLoadingOnRefresh: false,
       data:
           (isOnline) => Container(
             width: 8,

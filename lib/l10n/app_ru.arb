@@ -95,6 +95,8 @@
   "dialInstruction": "Введите .onion адрес\nдля вызова",
   "quickContacts": "Быстрые контакты",
   "enterAddress": "Ввести адрес",
+  "refreshStatus": "Обновить статус",
+  "refreshingStatus": "Обновление статуса...",
   "myAddress": "Мой адрес",
   "yourOnionAddress": "Ваш Onion адрес",
   "qrScannerNote": "Префикс http:// будет удален.",

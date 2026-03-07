@@ -95,6 +95,8 @@
   "dialInstruction": "输入您要呼叫的\n.onion 地址",
   "quickContacts": "快速呼叫",
   "enterAddress": "输入地址",
+  "refreshStatus": "刷新状态",
+  "refreshingStatus": "正在刷新状态...",
   "myAddress": "我的地址",
   "yourOnionAddress": "您的 Onion 地址",
   "qrScannerNote": "一些二维码扫描器会自动添加 http:// 前缀 — 它会在呼叫时被自动删除。",

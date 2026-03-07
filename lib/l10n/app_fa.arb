@@ -95,6 +95,8 @@
   "dialInstruction": "آدرس .onion را وارد کنید",
   "quickContacts": "مخاطبین سریع",
   "enterAddress": "ورود آدرس",
+  "refreshStatus": "بروزرسانی وضعیت",
+  "refreshingStatus": "در حال بروزرسانی وضعیت...",
   "myAddress": "آدرس من",
   "yourOnionAddress": "آدرس Onion شما",
   "qrScannerNote": "پیشوند http:// به‌طور خودکار هنگام تماس حذف می‌شود.",

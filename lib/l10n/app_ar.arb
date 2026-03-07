@@ -95,6 +95,8 @@
   "dialInstruction": "أدخل عنوان .onion للاتصال",
   "quickContacts": "جهات اتصال سريعة",
   "enterAddress": "إدخال العنوان",
+  "refreshStatus": "تحديث الحالة",
+  "refreshingStatus": "جاري تحديث الحالة...",
   "myAddress": "عنواني",
   "yourOnionAddress": "عنوان Onion الخاص بك",
   "qrScannerNote": "تتم إزالة بادئة http:// تلقائيًا.",

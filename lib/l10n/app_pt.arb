@@ -95,6 +95,8 @@
   "dialInstruction": "Insira o endereço .onion",
   "quickContacts": "Contatos rápidos",
   "enterAddress": "Inserir endereço",
+  "refreshStatus": "Atualizar status",
+  "refreshingStatus": "Atualizando status...",
   "myAddress": "Meu endereço",
   "yourOnionAddress": "Seu Endereço Onion",
   "qrScannerNote": "O prefixo http:// é removido automaticamente.",

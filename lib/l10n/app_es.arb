@@ -95,6 +95,8 @@
   "dialInstruction": "Ingresa la dirección .onion\nde la persona a llamar",
   "quickContacts": "Contactos rápidos",
   "enterAddress": "Ingresa una dirección",
+  "refreshStatus": "Actualizar estado",
+  "refreshingStatus": "Actualizando estado...",
   "myAddress": "Mi dirección",
   "yourOnionAddress": "Tu Dirección Onion",
   "qrScannerNote": "Algunos escáneres QR añaden http:// automáticamente — el prefijo se elimina automáticamente al llamar.",

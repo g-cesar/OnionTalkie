@@ -97,6 +97,8 @@
   "dialInstruction": "Inserisci l'indirizzo .onion\ndella persona da chiamare",
   "quickContacts": "Contatti rapidi",
   "enterAddress": "Inserisci un indirizzo",
+  "refreshStatus": "Aggiorna stato",
+  "refreshingStatus": "Aggiornamento stato...",
 
   "myAddress": "Il mio indirizzo",
   "yourOnionAddress": "Il tuo indirizzo Onion",

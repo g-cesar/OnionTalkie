@@ -95,6 +95,8 @@
   "dialInstruction": "発信先の .onion アドレスを\n入力してください",
   "quickContacts": "クイック発信",
   "enterAddress": "アドレスを入力",
+  "refreshStatus": "ステータスを更新",
+  "refreshingStatus": "ステータスを更新中...",
   "myAddress": "自分のアドレス",
   "yourOnionAddress": "あなたのOnionアドレス",
   "qrScannerNote": "http:// プレフィックスは自動的に削除されます。",

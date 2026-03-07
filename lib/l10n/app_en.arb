@@ -104,6 +104,8 @@
   "dialInstruction": "Enter the .onion address\nof the person to call",
   "quickContacts": "Quick contacts",
   "enterAddress": "Enter an address",
+  "refreshStatus": "Refresh status",
+  "refreshingStatus": "Refreshing status...",
 
   "myAddress": "My address",
   "yourOnionAddress": "Your Onion Address",

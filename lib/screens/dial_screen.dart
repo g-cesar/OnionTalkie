@@ -128,92 +128,124 @@ class _DialScreenState extends ConsumerState<DialScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final contacts = ref.watch(contactsProvider);
+
     return Scaffold(
-      appBar: AppBar(title: Text(S.of(context).dialTitle)),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Icon(
-              Icons.call,
-              size: 64,
-              color: theme.colorScheme.primary.withValues(alpha: 0.5),
+      appBar: AppBar(
+        title: Text(S.of(context).dialTitle),
+        actions: [
+          if (contacts.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: S.of(context).refreshStatus,
+              onPressed: () {
+                for (final contact in contacts) {
+                  ref.invalidate(onlineStatusProvider(contact.onionAddress));
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(S.of(context).refreshingStatus),
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              },
             ),
-            const SizedBox(height: 24),
-            Text(
-              S.of(context).dialInstruction,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            Form(
-              key: _formKey,
-              child: TextFormField(
-                controller: _controller,
-                decoration: InputDecoration(
-                  labelText: S.of(context).onionAddress,
-                  hintText: S.of(context).onionAddressHint,
-                  prefixIcon: const Icon(Icons.language),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.paste),
-                    onPressed: () async {
-                      final data = await Clipboard.getData('text/plain');
-                      if (data?.text != null) {
-                        _controller.text = _sanitizeAddress(data!.text!);
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          for (final contact in contacts) {
+            ref.invalidate(onlineStatusProvider(contact.onionAddress));
+          }
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Icon(
+                  Icons.call,
+                  size: 64,
+                  color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  S.of(context).dialInstruction,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                Form(
+                  key: _formKey,
+                  child: TextFormField(
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      labelText: S.of(context).onionAddress,
+                      hintText: S.of(context).onionAddressHint,
+                      prefixIcon: const Icon(Icons.language),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.paste),
+                        onPressed: () async {
+                          final data = await Clipboard.getData('text/plain');
+                          if (data?.text != null) {
+                            _controller.text = _sanitizeAddress(data!.text!);
+                          }
+                        },
+                      ),
+                    ),
+                    keyboardType: TextInputType.url,
+                    autocorrect: false,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return S.of(context).enterAddress;
                       }
+                      final sanitized = _sanitizeAddress(value);
+                      if (!sanitized.endsWith('.onion')) {
+                        return S.of(context).addressMustEndOnion;
+                      }
+                      return null;
                     },
+                    onFieldSubmitted: (_) => _call(),
                   ),
                 ),
-                keyboardType: TextInputType.url,
-                autocorrect: false,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return S.of(context).enterAddress;
-                  }
-                  final sanitized = _sanitizeAddress(value);
-                  if (!sanitized.endsWith('.onion')) {
-                    return S.of(context).addressMustEndOnion;
-                  }
-                  return null;
-                },
-                onFieldSubmitted: (_) => _call(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      final result = await context.push<String>('/qr-scanner');
-                      if (result != null &&
-                          result.isNotEmpty &&
-                          context.mounted) {
-                        _controller.text = result;
-                        _call();
-                      }
-                    },
-                    icon: const Icon(Icons.qr_code_scanner),
-                    label: Text(S.of(context).scanQr),
-                  ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          final result = await context.push<String>(
+                            '/qr-scanner',
+                          );
+                          if (result != null &&
+                              result.isNotEmpty &&
+                              context.mounted) {
+                            _controller.text = result;
+                            _call();
+                          }
+                        },
+                        icon: const Icon(Icons.qr_code_scanner),
+                        label: Text(S.of(context).scanQr),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                _QuickContacts(onSelectContact: _callContact),
+                const SizedBox(height: 32), // Replaced Spacer with fixed box
+                FilledButton.icon(
+                  onPressed: _call,
+                  icon: const Icon(Icons.call),
+                  label: Text(S.of(context).dialTitle),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-
-            // ── Quick contacts ──
-            _QuickContacts(onSelectContact: _callContact),
-
-            const Spacer(),
-            FilledButton.icon(
-              onPressed: _call,
-              icon: const Icon(Icons.call),
-              label: Text(S.of(context).dialTitle),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -283,6 +315,7 @@ class _QuickContacts extends ConsumerWidget {
                         ),
                         alignment: Alignment.center,
                         child: onlineAsync.when(
+                          skipLoadingOnRefresh: false,
                           data:
                               (online) => Container(
                                 width: 7,

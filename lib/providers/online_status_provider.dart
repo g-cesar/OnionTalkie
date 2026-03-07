@@ -40,8 +40,7 @@ class OnlineStatusNotifier
       return false;
     }
 
-    // If we just entered a polling-enabled screen, clear the cache for this address
-    // to ensure a fresh "restart" as requested.
+    // Force a fresh check when first building/re-entering screen
     _cache.remove(onionAddress);
 
     _startPolling();
@@ -52,7 +51,7 @@ class OnlineStatusNotifier
 
   void _startPolling() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 45), (_) {
+    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
       refresh();
     });
   }
