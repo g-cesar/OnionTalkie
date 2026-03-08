@@ -104,6 +104,12 @@
   "copy": "コピー",
   "share": "共有",
   "notAvailable": "利用不可",
+  "availability": "可用性",
+  "availabilityHint": "例：10分おき",
+  "copyAvailability": "可用性をコピー",
+  "shareAvailability": "可用性を共有",
+  "availabilityCopied": "可用性がクリップボードにコピーされました",
+
   "addressFound": "アドレスが見つかりました",
   "useAddress": "このアドレスを使用",
   "invalidOnionAddress": "無効な .onion アドレスです",

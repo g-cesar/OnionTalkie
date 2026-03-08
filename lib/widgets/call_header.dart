@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme/app_theme.dart';
 import '../models/call_state.dart';
 import '../providers/circuit_provider.dart';
+import '../providers/contacts_provider.dart';
 import '../providers/settings_provider.dart';
 import 'circuit_path_widget.dart';
 
@@ -27,9 +28,7 @@ class CallHeader extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.darkCard,
         border: Border(
-          bottom: BorderSide(
-            color: AppColors.outline.withValues(alpha: 0.3),
-          ),
+          bottom: BorderSide(color: AppColors.outline.withValues(alpha: 0.3)),
         ),
       ),
       child: SafeArea(
@@ -58,8 +57,10 @@ class CallHeader extends ConsumerWidget {
                       visualDensity: VisualDensity.compact,
                       padding: EdgeInsets.zero,
                       labelStyle: theme.textTheme.labelSmall,
-                    side: BorderSide(color: AppColors.mint.withValues(alpha: 0.5)),
-                    backgroundColor: AppColors.mint.withValues(alpha: 0.1),
+                      side: BorderSide(
+                        color: AppColors.mint.withValues(alpha: 0.5),
+                      ),
+                      backgroundColor: AppColors.mint.withValues(alpha: 0.1),
                     ),
                   ),
               ],
@@ -90,12 +91,47 @@ class CallHeader extends ConsumerWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 4),
+              if (callState.remoteAddress != null)
+                Consumer(
+                  builder: (context, ref, _) {
+                    final contact = ref
+                        .watch(contactsProvider.notifier)
+                        .findByOnion(callState.remoteAddress!);
+                    if (contact != null && contact.availability.isNotEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 24),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.event_available,
+                              size: 10,
+                              color: AppColors.mint.withValues(alpha: 0.8),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                contact.availability,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: AppColors.mint,
+                                  fontSize: 10,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
               const SizedBox(height: 6),
             ],
 
             // Cipher info row
-            if (callState.localCipher != null)
-              _CipherRow(callState: callState),
+            if (callState.localCipher != null) _CipherRow(callState: callState),
 
             // Circuit path row
             if (showCircuit && circuitHops != null)
@@ -145,17 +181,37 @@ class _PhaseBadge extends StatelessWidget {
   (String, Color, IconData) _phaseInfo(BuildContext context, ThemeData theme) {
     switch (phase) {
       case CallPhase.idle:
-        return (S.of(context).phaseIdle, theme.colorScheme.outline, Icons.phone_disabled);
+        return (
+          S.of(context).phaseIdle,
+          theme.colorScheme.outline,
+          Icons.phone_disabled,
+        );
       case CallPhase.connecting:
-        return (S.of(context).phaseConnecting, theme.colorScheme.tertiary, Icons.sync);
+        return (
+          S.of(context).phaseConnecting,
+          theme.colorScheme.tertiary,
+          Icons.sync,
+        );
       case CallPhase.ringing:
-        return (S.of(context).phaseIncoming, AppColors.yellow, Icons.ring_volume);
+        return (
+          S.of(context).phaseIncoming,
+          AppColors.yellow,
+          Icons.ring_volume,
+        );
       case CallPhase.active:
         return (S.of(context).phaseActive, AppColors.mint, Icons.call);
       case CallPhase.ended:
-        return (S.of(context).phaseEnded, theme.colorScheme.outline, Icons.call_end);
+        return (
+          S.of(context).phaseEnded,
+          theme.colorScheme.outline,
+          Icons.call_end,
+        );
       case CallPhase.error:
-        return (S.of(context).phaseError, theme.colorScheme.error, Icons.error_outline);
+        return (
+          S.of(context).phaseError,
+          theme.colorScheme.error,
+          Icons.error_outline,
+        );
     }
   }
 }
@@ -174,11 +230,7 @@ class _CipherRow extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(
-          match ? Icons.lock : Icons.lock_open,
-          size: 14,
-          color: matchColor,
-        ),
+        Icon(match ? Icons.lock : Icons.lock_open, size: 14, color: matchColor),
         const SizedBox(width: 6),
         Text(
           callState.localCipher ?? '—',
@@ -198,10 +250,10 @@ class _CipherRow extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              match ? S.of(context).cipherMatch : S.of(context).cipherMismatch(callState.remoteCipher!),
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: matchColor,
-              ),
+              match
+                  ? S.of(context).cipherMatch
+                  : S.of(context).cipherMismatch(callState.remoteCipher!),
+              style: theme.textTheme.labelSmall?.copyWith(color: matchColor),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -215,7 +267,8 @@ class _CipherRow extends StatelessWidget {
 /// Animated badge indicating the remote party is speaking.
 class _AnimatedRecordingBadge extends StatefulWidget {
   @override
-  State<_AnimatedRecordingBadge> createState() => _AnimatedRecordingBadgeState();
+  State<_AnimatedRecordingBadge> createState() =>
+      _AnimatedRecordingBadgeState();
 }
 
 class _AnimatedRecordingBadgeState extends State<_AnimatedRecordingBadge>
@@ -245,16 +298,26 @@ class _AnimatedRecordingBadgeState extends State<_AnimatedRecordingBadge>
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.coral.withValues(alpha: 0.1 + _controller.value * 0.15),
+            color: AppColors.coral.withValues(
+              alpha: 0.1 + _controller.value * 0.15,
+            ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppColors.coral.withValues(alpha: 0.3 + _controller.value * 0.3),
+              color: AppColors.coral.withValues(
+                alpha: 0.3 + _controller.value * 0.3,
+              ),
             ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.mic, size: 14, color: AppColors.coral.withValues(alpha: 0.7 + _controller.value * 0.3)),
+              Icon(
+                Icons.mic,
+                size: 14,
+                color: AppColors.coral.withValues(
+                  alpha: 0.7 + _controller.value * 0.3,
+                ),
+              ),
               const SizedBox(width: 4),
               Text(
                 S.of(context).talk,
@@ -270,5 +333,3 @@ class _AnimatedRecordingBadgeState extends State<_AnimatedRecordingBadge>
     );
   }
 }
-
-

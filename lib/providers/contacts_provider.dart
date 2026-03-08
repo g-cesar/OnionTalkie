@@ -31,11 +31,13 @@ class ContactsNotifier extends StateNotifier<List<Contact>> {
     required String alias,
     required String onionAddress,
     String sharedSecret = '',
+    String availability = '',
   }) async {
     final contact = await _service.add(
       alias: alias,
       onionAddress: onionAddress,
       sharedSecret: sharedSecret,
+      availability: availability,
     );
     state = _service.contacts;
     return contact;
@@ -83,8 +85,9 @@ class ContactsNotifier extends StateNotifier<List<Contact>> {
 }
 
 /// The main contacts provider.
-final contactsProvider =
-    StateNotifierProvider<ContactsNotifier, List<Contact>>((ref) {
-  final service = ref.watch(contactsServiceProvider);
-  return ContactsNotifier(service);
-});
+final contactsProvider = StateNotifierProvider<ContactsNotifier, List<Contact>>(
+  (ref) {
+    final service = ref.watch(contactsServiceProvider);
+    return ContactsNotifier(service);
+  },
+);

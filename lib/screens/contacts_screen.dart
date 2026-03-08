@@ -154,6 +154,8 @@ class _ContactTile extends ConsumerWidget {
     final onlineAsync =
         torReady ? ref.watch(onlineStatusProvider(contact.onionAddress)) : null;
 
+    final isOnline = onlineAsync?.valueOrNull ?? false;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
@@ -253,6 +255,31 @@ class _ContactTile extends ConsumerWidget {
                             ),
                           ),
                         ),
+                      if (contact.availability.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.event_available,
+                                size: 10,
+                                color: AppColors.mint.withValues(alpha: 0.8),
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  contact.availability,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: AppColors.mint,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -260,11 +287,20 @@ class _ContactTile extends ConsumerWidget {
 
                 // Call button
                 IconButton(
-                  onPressed: onCall,
-                  icon: Icon(Icons.call, color: AppColors.mint),
+                  onPressed: (torReady && isOnline) ? onCall : null,
+                  icon: Icon(
+                    Icons.call,
+                    color:
+                        (torReady && isOnline)
+                            ? AppColors.mint
+                            : cs.onSurfaceVariant.withValues(alpha: 0.3),
+                  ),
                   tooltip: S.of(context).callTooltip,
                   style: IconButton.styleFrom(
-                    backgroundColor: AppColors.mint.withValues(alpha: 0.15),
+                    backgroundColor:
+                        (torReady && isOnline)
+                            ? AppColors.mint.withValues(alpha: 0.15)
+                            : Colors.transparent,
                   ),
                 ),
               ],

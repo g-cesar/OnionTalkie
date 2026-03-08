@@ -76,10 +76,15 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> setLocale(String locale) async {
     await updateSettings(state.copyWith(locale: locale));
   }
+
+  Future<void> setAvailability(String availability) async {
+    await updateSettings(state.copyWith(availability: availability));
+  }
 }
 
-final settingsProvider =
-    StateNotifierProvider<SettingsNotifier, AppSettings>((ref) {
+final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((
+  ref,
+) {
   final storage = ref.watch(storageServiceProvider);
   return SettingsNotifier(storage);
 });

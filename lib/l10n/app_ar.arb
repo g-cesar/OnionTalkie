@@ -104,6 +104,12 @@
   "copy": "نسخ",
   "share": "مشاركة",
   "notAvailable": "غير متوفر",
+  "availability": "التوفر",
+  "availabilityHint": "مثلا: كل 10 دقائق",
+  "copyAvailability": "نسخ التوفر",
+  "shareAvailability": "مشاركة التوفر",
+  "availabilityCopied": "تم نسخ التوفر إلى الحافظة",
+
   "addressFound": "تم العثور على عنوان",
   "useAddress": "استخدام العنوان",
   "invalidOnionAddress": "عنوان .onion غير صالح",

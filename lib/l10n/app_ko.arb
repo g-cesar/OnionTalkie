@@ -104,6 +104,12 @@
   "copy": "복사",
   "share": "공유",
   "notAvailable": "사용 불가",
+  "availability": "가용성",
+  "availabilityHint": "예: 10분마다",
+  "copyAvailability": "가용성 복사",
+  "shareAvailability": "가용성 공유",
+  "availabilityCopied": "가용성이 클립보드에 복사되었습니다",
+
   "addressFound": "주소를 찾았습니다",
   "useAddress": "이 주소 사용",
   "invalidOnionAddress": "올바르지 않은 .onion 주소입니다",

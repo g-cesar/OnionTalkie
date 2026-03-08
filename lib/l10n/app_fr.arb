@@ -104,6 +104,12 @@
   "copy": "Copier",
   "share": "Partager",
   "notAvailable": "Indisponible",
+  "availability": "Disponibilité",
+  "availabilityHint": "ex. Toutes le 10 minutes",
+  "copyAvailability": "Copier la disponibilité",
+  "shareAvailability": "Partager la disponibilité",
+  "availabilityCopied": "Disponibilité copiée dans le presse-papiers",
+
   "addressFound": "Adresse trouvée",
   "useAddress": "Utiliser l'adresse",
   "invalidOnionAddress": "Adresse .onion invalide",

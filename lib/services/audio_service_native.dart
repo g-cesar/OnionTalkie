@@ -60,9 +60,7 @@ class AudioServiceNative extends AudioServiceBase {
     // Ensure volume is at max.
     await _player!.setVolume(1.0);
 
-    await _recorder!.setSubscriptionDuration(
-      const Duration(milliseconds: 100),
-    );
+    await _recorder!.setSubscriptionDuration(const Duration(milliseconds: 100));
   }
 
   /// Request microphone permission.
@@ -162,7 +160,9 @@ class AudioServiceNative extends AudioServiceBase {
     }
 
     if (_state == AudioState.playing) {
-      try { await _player!.stopPlayer(); } catch (_) {}
+      try {
+        await _player!.stopPlayer();
+      } catch (_) {}
     }
 
     _updateState(AudioState.playing);
@@ -206,28 +206,40 @@ class AudioServiceNative extends AudioServiceBase {
       await _player!.setVolume(1.0);
 
       // Estimate playback duration for a safety timeout.
-      final durationMs = (audioData.length * 1000) ~/
+      final durationMs =
+          (audioData.length * 1000) ~/
           (AppConstants.defaultSampleRate * 2 * AppConstants.defaultChannels);
       final timeout = Duration(milliseconds: durationMs + 3000);
 
       // Wait for the whenFinished callback (or timeout).
-      await completer.future.timeout(timeout, onTimeout: () {
-        debugPrint('AudioServiceNative: playback timeout — stopping');
-      });
+      await completer.future.timeout(
+        timeout,
+        onTimeout: () {
+          debugPrint('AudioServiceNative: playback timeout — stopping');
+        },
+      );
 
-      try { await _player!.stopPlayer(); } catch (_) {}
+      try {
+        await _player!.stopPlayer();
+      } catch (_) {}
       _updateState(AudioState.idle);
 
       debugPrint('AudioServiceNative: Playback complete (${durationMs}ms)');
     } catch (e) {
       debugPrint('AudioServiceNative: Playback error: $e');
-      try { await _player!.stopPlayer(); } catch (_) {}
+      try {
+        await _player!.stopPlayer();
+      } catch (_) {}
       _updateState(AudioState.idle);
     }
   }
 
   /// Build a complete WAV file (RIFF header + PCM data) from raw PCM16 bytes.
-  static Uint8List _buildWav(Uint8List pcmData, int sampleRate, int numChannels) {
+  static Uint8List _buildWav(
+    Uint8List pcmData,
+    int sampleRate,
+    int numChannels,
+  ) {
     final byteRate = sampleRate * numChannels * 2; // 16-bit = 2 bytes/sample
     final blockAlign = numChannels * 2;
     final dataSize = pcmData.length;
@@ -249,19 +261,19 @@ class AudioServiceNative extends AudioServiceBase {
     header.setUint8(13, 0x6D);
     header.setUint8(14, 0x74);
     header.setUint8(15, 0x20);
-    header.setUint32(16, 16, Endian.little);              // chunk size
-    header.setUint16(20, 1, Endian.little);               // PCM format
-    header.setUint16(22, numChannels, Endian.little);     // channels
-    header.setUint32(24, sampleRate, Endian.little);      // sample rate
-    header.setUint32(28, byteRate, Endian.little);        // byte rate
-    header.setUint16(32, blockAlign, Endian.little);      // block align
-    header.setUint16(34, 16, Endian.little);              // bits per sample
+    header.setUint32(16, 16, Endian.little); // chunk size
+    header.setUint16(20, 1, Endian.little); // PCM format
+    header.setUint16(22, numChannels, Endian.little); // channels
+    header.setUint32(24, sampleRate, Endian.little); // sample rate
+    header.setUint32(28, byteRate, Endian.little); // byte rate
+    header.setUint16(32, blockAlign, Endian.little); // block align
+    header.setUint16(34, 16, Endian.little); // bits per sample
     // "data" chunk
     header.setUint8(36, 0x64);
     header.setUint8(37, 0x61);
     header.setUint8(38, 0x74);
     header.setUint8(39, 0x61);
-    header.setUint32(40, dataSize, Endian.little);        // data size
+    header.setUint32(40, dataSize, Endian.little); // data size
 
     // Combine header + PCM data.
     final wav = Uint8List(44 + dataSize);
@@ -280,7 +292,9 @@ class AudioServiceNative extends AudioServiceBase {
 
     // Stop any single-blob playback if running.
     if (_state == AudioState.playing) {
-      try { await _player!.stopPlayer(); } catch (_) {}
+      try {
+        await _player!.stopPlayer();
+      } catch (_) {}
     }
 
     _streamingPlaybackActive = true;
@@ -296,9 +310,11 @@ class AudioServiceNative extends AudioServiceBase {
         bufferSize: 16384,
       );
       await _player!.setVolume(1.0);
-      debugPrint('AudioServiceNative: Streaming playback started '
-          '(sampleRate=${AppConstants.defaultSampleRate}, '
-          'channels=${AppConstants.defaultChannels})');
+      debugPrint(
+        'AudioServiceNative: Streaming playback started '
+        '(sampleRate=${AppConstants.defaultSampleRate}, '
+        'channels=${AppConstants.defaultChannels})',
+      );
     } catch (e) {
       debugPrint('AudioServiceNative: Failed to start streaming playback: $e');
       _streamingPlaybackActive = false;
@@ -324,7 +340,9 @@ class AudioServiceNative extends AudioServiceBase {
       int feedSize = _playbackBuffer.length;
       if (feedSize % 2 != 0) feedSize -= 1;
 
-      final feedChunk = Uint8List.fromList(_playbackBuffer.sublist(0, feedSize));
+      final feedChunk = Uint8List.fromList(
+        _playbackBuffer.sublist(0, feedSize),
+      );
       _playbackBuffer.removeRange(0, feedSize);
 
       // On some platforms, isPlaying may be false intermittently for streams.
@@ -346,7 +364,9 @@ class AudioServiceNative extends AudioServiceBase {
         int feedSize = _playbackBuffer.length;
         if (feedSize % 2 != 0) feedSize -= 1;
         if (feedSize > 0) {
-          final feedChunk = Uint8List.fromList(_playbackBuffer.sublist(0, feedSize));
+          final feedChunk = Uint8List.fromList(
+            _playbackBuffer.sublist(0, feedSize),
+          );
           await _player!.feedUint8FromStream(feedChunk);
         }
       } catch (_) {}

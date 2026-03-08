@@ -8,6 +8,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../core/theme/app_theme.dart';
 import '../providers/tor_provider.dart';
+import '../providers/settings_provider.dart';
 
 class OnionAddressScreen extends ConsumerWidget {
   const OnionAddressScreen({super.key});
@@ -15,13 +16,18 @@ class OnionAddressScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final torStatus = ref.watch(torProvider);
+    final settings = ref.watch(settingsProvider);
     final theme = Theme.of(context);
     final address = torStatus.onionAddress ?? S.of(context).notAvailable;
 
+    String qrData = address;
+    if (torStatus.onionAddress != null && settings.availability.isNotEmpty) {
+      qrData =
+          'oniontalkie://${torStatus.onionAddress}?availability=${Uri.encodeComponent(settings.availability)}';
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(S.of(context).myAddress),
-      ),
+      appBar: AppBar(title: Text(S.of(context).myAddress)),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -44,7 +50,7 @@ class OnionAddressScreen extends ConsumerWidget {
                     ],
                   ),
                   child: QrImageView(
-                    data: torStatus.onionAddress!,
+                    data: qrData,
                     version: QrVersions.auto,
                     size: 240,
                     backgroundColor: Colors.white,
@@ -61,7 +67,7 @@ class OnionAddressScreen extends ConsumerWidget {
                 const SizedBox(height: 32),
               ],
 
-              // Address text
+              // Address field with inline actions
               Text(
                 S.of(context).yourOnionAddress,
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -69,24 +75,134 @@ class OnionAddressScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.darkCard,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.outline),
-                ),
-                child: SelectableText(
-                  address,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontFamily: 'monospace',
-                    letterSpacing: 0.5,
+              TextFormField(
+                initialValue: address,
+                readOnly: true,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.language),
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.copy, size: 20),
+                        tooltip: S.of(context).copy,
+                        onPressed: () {
+                          if (torStatus.onionAddress != null) {
+                            Clipboard.setData(
+                              ClipboardData(text: torStatus.onionAddress!),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(S.of(context).addressCopied),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.share, size: 20),
+                        tooltip: S.of(context).share,
+                        onPressed: () async {
+                          if (torStatus.onionAddress != null) {
+                            if (kIsWeb) {
+                              Clipboard.setData(
+                                ClipboardData(text: torStatus.onionAddress!),
+                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(S.of(context).addressCopied),
+                                  ),
+                                );
+                              }
+                            } else {
+                              await SharePlus.instance.share(
+                                ShareParams(text: torStatus.onionAddress!),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                    ],
                   ),
-                  textAlign: TextAlign.center,
+                ),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontFamily: 'monospace',
+                  letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 24),
+
+              // Availability section with inline actions
+              Text(
+                S.of(context).availability,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                initialValue: settings.availability,
+                decoration: InputDecoration(
+                  hintText: S.of(context).availabilityHint,
+                  prefixIcon: const Icon(Icons.event_available),
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.copy, size: 20),
+                        tooltip: S.of(context).copyAvailability,
+                        onPressed: () {
+                          if (settings.availability.isNotEmpty) {
+                            Clipboard.setData(
+                              ClipboardData(text: settings.availability),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(S.of(context).availabilityCopied),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.share, size: 20),
+                        tooltip: S.of(context).shareAvailability,
+                        onPressed: () async {
+                          if (settings.availability.isNotEmpty) {
+                            if (kIsWeb) {
+                              Clipboard.setData(
+                                ClipboardData(text: settings.availability),
+                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      S.of(context).availabilityCopied,
+                                    ),
+                                  ),
+                                );
+                              }
+                            } else {
+                              await SharePlus.instance.share(
+                                ShareParams(text: settings.availability),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                  ),
+                ),
+                style: theme.textTheme.bodyMedium,
+                onChanged:
+                    (val) => ref
+                        .read(settingsProvider.notifier)
+                        .setAvailability(val.trim()),
+              ),
+              const SizedBox(height: 16),
 
               // Warning about QR scanners
               if (torStatus.onionAddress != null)
@@ -115,47 +231,6 @@ class OnionAddressScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-
-              const SizedBox(height: 24),
-
-              // Action buttons
-              if (torStatus.onionAddress != null) ...[
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: torStatus.onionAddress!));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(S.of(context).addressCopied)),
-                          );
-                        },
-                        icon: const Icon(Icons.copy),
-                        label: Text(S.of(context).copy),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () async {
-                          if (kIsWeb) {
-                            Clipboard.setData(ClipboardData(text: torStatus.onionAddress!));
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(S.of(context).addressCopied)),
-                              );
-                            }
-                          } else {
-                            await SharePlus.instance.share(ShareParams(text: torStatus.onionAddress!));
-                          }
-                        },
-                        icon: const Icon(Icons.share),
-                        label: Text(S.of(context).share),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ],
           ),
         ),

@@ -52,6 +52,9 @@ class AppSettings {
   // Locale — empty string means "follow device"
   final String locale;
 
+  // Availability
+  final String availability;
+
   const AppSettings({
     this.opusBitrate = 16,
     this.sampleRate = 8000,
@@ -74,6 +77,7 @@ class AppSettings {
     this.customTremolo = 0,
     this.relayServerUrl = '',
     this.locale = '',
+    this.availability = '',
   });
 
   AppSettings copyWith({
@@ -98,6 +102,7 @@ class AppSettings {
     double? customTremolo,
     String? relayServerUrl,
     String? locale,
+    String? availability,
   }) {
     return AppSettings(
       opusBitrate: opusBitrate ?? this.opusBitrate,
@@ -123,6 +128,7 @@ class AppSettings {
       customTremolo: customTremolo ?? this.customTremolo,
       relayServerUrl: relayServerUrl ?? this.relayServerUrl,
       locale: locale ?? this.locale,
+      availability: availability ?? this.availability,
     );
   }
 
@@ -148,6 +154,7 @@ class AppSettings {
     'customTremolo': customTremolo,
     'relayServerUrl': relayServerUrl,
     'locale': locale,
+    'availability': availability,
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
@@ -182,6 +189,7 @@ class AppSettings {
       customTremolo: (json['customTremolo'] as num?)?.toDouble() ?? 0,
       relayServerUrl: json['relayServerUrl'] as String? ?? '',
       locale: json['locale'] as String? ?? '',
+      availability: json['availability'] as String? ?? '',
     );
   }
 

@@ -104,6 +104,12 @@
   "copy": "کپی کردن",
   "share": "اشتراک‌گذاری",
   "notAvailable": "در دسترس نیست",
+  "availability": "در دسترس بودن",
+  "availabilityHint": "به عنوان مثال: هر 10 دقیقه",
+  "copyAvailability": "کپی در دسترس بودن",
+  "shareAvailability": "اشتراک‌گذاری در دسترس بودن",
+  "availabilityCopied": "در دسترس بودن در کلیپ‌بورد کپی شد",
+
   "addressFound": "آدرس پیدا شد",
   "useAddress": "استفاده از آدرس",
   "invalidOnionAddress": "آدرس .onion نامعتبر است",

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/contact.dart';
+import '../core/theme/app_theme.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../providers/contacts_provider.dart';
@@ -279,6 +280,7 @@ class _QuickContacts extends ConsumerWidget {
         const SizedBox(height: 8),
         ...contacts.map((c) {
           final onlineAsync = ref.watch(onlineStatusProvider(c.onionAddress));
+          final isOnline = onlineAsync.valueOrNull ?? false;
           return Padding(
             padding: const EdgeInsets.only(bottom: 6),
             child: Material(
@@ -358,16 +360,62 @@ class _QuickContacts extends ConsumerWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                subtitle: Text(
-                  c.shortOnion,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontFamily: 'monospace',
-                    fontSize: 10,
-                    color: cs.onSurfaceVariant,
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      c.shortOnion,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontFamily: 'monospace',
+                        fontSize: 10,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    if (c.availability.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.event_available,
+                              size: 10,
+                              color: AppColors.mint,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                c.availability,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.mint,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                trailing: IconButton(
+                  icon: Icon(
+                    Icons.call,
+                    size: 18,
+                    color:
+                        isOnline
+                            ? AppColors.mint
+                            : cs.onSurfaceVariant.withValues(alpha: 0.3),
+                  ),
+                  onPressed: isOnline ? () => onSelectContact(c) : null,
+                  style: IconButton.styleFrom(
+                    backgroundColor:
+                        isOnline
+                            ? AppColors.mint.withValues(alpha: 0.15)
+                            : Colors.transparent,
                   ),
                 ),
-                trailing: Icon(Icons.call, size: 18, color: cs.primary),
-                onTap: () => onSelectContact(c),
+                onTap: isOnline ? () => onSelectContact(c) : null,
               ),
             ),
           );

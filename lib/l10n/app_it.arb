@@ -107,6 +107,11 @@
   "copy": "Copia",
   "share": "Condividi",
   "notAvailable": "Non disponibile",
+  "availability": "Disponibilità",
+  "availabilityHint": "es. Ogni 10 minuti",
+  "copyAvailability": "Copia disponibilità",
+  "shareAvailability": "Condividi disponibilità",
+  "availabilityCopied": "Disponibilità copiata negli appunti",
 
   "addressFound": "Indirizzo trovato",
   "useAddress": "Usa indirizzo",

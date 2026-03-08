@@ -121,7 +121,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   router.routerDelegate.addListener(() {
     final String location =
         router.routerDelegate.currentConfiguration.last.matchedLocation;
-    ref.read(currentPathProvider.notifier).state = location;
+    Future.microtask(() {
+      ref.read(currentPathProvider.notifier).state = location;
+    });
   });
 
   return router;

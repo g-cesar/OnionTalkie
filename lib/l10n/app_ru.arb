@@ -104,6 +104,12 @@
   "copy": "Копировать",
   "share": "Поделиться",
   "notAvailable": "Недоступно",
+  "availability": "Доступность",
+  "availabilityHint": "напр. Каждые 10 минут",
+  "copyAvailability": "Копировать доступность",
+  "shareAvailability": "Поделиться доступностью",
+  "availabilityCopied": "Доступность скопирована в буфер обмена",
+
   "addressFound": "Адрес найден",
   "useAddress": "Использовать",
   "invalidOnionAddress": "Неверный .onion адрес",

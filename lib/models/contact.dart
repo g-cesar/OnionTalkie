@@ -32,6 +32,9 @@ class Contact {
   /// and the user hasn't acknowledged it yet.
   final bool addressChanged;
 
+  /// Availability information (e.g. "Online every 10 minutes").
+  final String availability;
+
   const Contact({
     required this.id,
     required this.alias,
@@ -41,6 +44,7 @@ class Contact {
     this.lastContactedAt,
     this.previousOnionAddress,
     this.addressChanged = false,
+    this.availability = '',
   });
 
   Contact copyWith({
@@ -50,6 +54,7 @@ class Contact {
     DateTime? lastContactedAt,
     String? previousOnionAddress,
     bool? addressChanged,
+    String? availability,
   }) {
     return Contact(
       id: id,
@@ -60,6 +65,7 @@ class Contact {
       lastContactedAt: lastContactedAt ?? this.lastContactedAt,
       previousOnionAddress: previousOnionAddress ?? this.previousOnionAddress,
       addressChanged: addressChanged ?? this.addressChanged,
+      availability: availability ?? this.availability,
     );
   }
 
@@ -78,28 +84,31 @@ class Contact {
   // ── Serialisation ──────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'alias': alias,
-        'onionAddress': onionAddress,
-        'sharedSecret': sharedSecret,
-        'createdAt': createdAt.toIso8601String(),
-        'lastContactedAt': lastContactedAt?.toIso8601String(),
-        'previousOnionAddress': previousOnionAddress,
-        'addressChanged': addressChanged,
-      };
+    'id': id,
+    'alias': alias,
+    'onionAddress': onionAddress,
+    'sharedSecret': sharedSecret,
+    'createdAt': createdAt.toIso8601String(),
+    'lastContactedAt': lastContactedAt?.toIso8601String(),
+    'previousOnionAddress': previousOnionAddress,
+    'addressChanged': addressChanged,
+    'availability': availability,
+  };
 
   factory Contact.fromJson(Map<String, dynamic> json) => Contact(
-        id: json['id'] as String,
-        alias: json['alias'] as String,
-        onionAddress: json['onionAddress'] as String,
-        sharedSecret: (json['sharedSecret'] as String?) ?? '',
-        createdAt: DateTime.parse(json['createdAt'] as String),
-        lastContactedAt: json['lastContactedAt'] != null
+    id: json['id'] as String,
+    alias: json['alias'] as String,
+    onionAddress: json['onionAddress'] as String,
+    sharedSecret: (json['sharedSecret'] as String?) ?? '',
+    createdAt: DateTime.parse(json['createdAt'] as String),
+    lastContactedAt:
+        json['lastContactedAt'] != null
             ? DateTime.parse(json['lastContactedAt'] as String)
             : null,
-        previousOnionAddress: json['previousOnionAddress'] as String?,
-        addressChanged: (json['addressChanged'] as bool?) ?? false,
-      );
+    previousOnionAddress: json['previousOnionAddress'] as String?,
+    addressChanged: (json['addressChanged'] as bool?) ?? false,
+    availability: (json['availability'] as String?) ?? '',
+  );
 
   String toJsonString() => jsonEncode(toJson());
   factory Contact.fromJsonString(String s) =>

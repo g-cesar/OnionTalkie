@@ -35,9 +35,10 @@ class ContactsService {
         return _contacts;
       }
       final json = await file.readAsString();
-      final list = (jsonDecode(json) as List)
-          .map((e) => Contact.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final list =
+          (jsonDecode(json) as List)
+              .map((e) => Contact.fromJson(e as Map<String, dynamic>))
+              .toList();
       _contacts = list;
     } catch (e) {
       debugPrint('ContactsService: failed to load contacts: $e');
@@ -64,6 +65,7 @@ class ContactsService {
     required String alias,
     required String onionAddress,
     String sharedSecret = '',
+    String availability = '',
   }) async {
     final contact = Contact(
       id: _uuid.v4(),
@@ -71,6 +73,7 @@ class ContactsService {
       onionAddress: _normalise(onionAddress),
       sharedSecret: sharedSecret,
       createdAt: DateTime.now(),
+      availability: availability,
     );
     _contacts.add(contact);
     await _save();
@@ -117,9 +120,7 @@ class ContactsService {
   Contact? findByPreviousOnion(String onionAddress) {
     final normalised = _normalise(onionAddress);
     try {
-      return _contacts.firstWhere(
-        (c) => c.previousOnionAddress == normalised,
-      );
+      return _contacts.firstWhere((c) => c.previousOnionAddress == normalised);
     } catch (_) {
       return null;
     }
@@ -156,9 +157,7 @@ class ContactsService {
   Future<void> markContacted(String contactId) async {
     final idx = _contacts.indexWhere((c) => c.id == contactId);
     if (idx == -1) return;
-    _contacts[idx] = _contacts[idx].copyWith(
-      lastContactedAt: DateTime.now(),
-    );
+    _contacts[idx] = _contacts[idx].copyWith(lastContactedAt: DateTime.now());
     await _save();
   }
 

@@ -114,6 +114,11 @@
   "copy": "Copy",
   "share": "Share",
   "notAvailable": "Not available",
+  "availability": "Availability",
+  "availabilityHint": "e.g. Every 10 minutes",
+  "copyAvailability": "Copy Availability",
+  "shareAvailability": "Share Availability",
+  "availabilityCopied": "Availability copied to clipboard",
 
   "addressFound": "Address found",
   "useAddress": "Use address",

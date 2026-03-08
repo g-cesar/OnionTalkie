@@ -104,6 +104,12 @@
   "copy": "复制",
   "share": "分享",
   "notAvailable": "不可用",
+  "availability": "可用性",
+  "availabilityHint": "例如：每10分钟",
+  "copyAvailability": "复制可用性",
+  "shareAvailability": "分享可用性",
+  "availabilityCopied": "可用性已复制到剪贴板",
+
   "addressFound": "找到地址",
   "useAddress": "使用该地址",
   "invalidOnionAddress": "无效的 .onion 地址",

@@ -26,6 +26,7 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
   final _aliasCtrl = TextEditingController();
   final _onionCtrl = TextEditingController();
   final _secretCtrl = TextEditingController();
+  final _availabilityCtrl = TextEditingController();
   bool _showSecret = false;
   bool _isEditing = false;
 
@@ -35,12 +36,14 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
     if (widget.contactId != null) {
       _isEditing = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final contact =
-            ref.read(contactsProvider.notifier).findById(widget.contactId!);
+        final contact = ref
+            .read(contactsProvider.notifier)
+            .findById(widget.contactId!);
         if (contact != null) {
           _aliasCtrl.text = contact.alias;
           _onionCtrl.text = contact.onionAddress;
           _secretCtrl.text = contact.sharedSecret;
+          _availabilityCtrl.text = contact.availability;
         }
       });
     }
@@ -51,6 +54,7 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
     _aliasCtrl.dispose();
     _onionCtrl.dispose();
     _secretCtrl.dispose();
+    _availabilityCtrl.dispose();
     super.dispose();
   }
 
@@ -58,7 +62,28 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
       .trim()
       .toLowerCase()
       .replaceAll(RegExp(r'^https?://'), '')
+      .replaceAll(RegExp(r'^oniontalkie://'), '')
+      .split('?')[0] // Remove query params if any
       .replaceAll(RegExp(r'/$'), '');
+
+  void _handleQrResult(String result) {
+    if (result.startsWith('oniontalkie://')) {
+      try {
+        final uri = Uri.parse(result);
+        final onion = uri.host;
+        final availability = uri.queryParameters['availability'];
+
+        _onionCtrl.text = _sanitiseOnion(onion);
+        if (availability != null && availability.isNotEmpty) {
+          _availabilityCtrl.text = availability;
+        }
+      } catch (e) {
+        _onionCtrl.text = _sanitiseOnion(result);
+      }
+    } else {
+      _onionCtrl.text = _sanitiseOnion(result);
+    }
+  }
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
@@ -66,24 +91,32 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
     final alias = _aliasCtrl.text.trim();
     final onion = _sanitiseOnion(_onionCtrl.text);
     final secret = _secretCtrl.text.trim();
+    final availability = _availabilityCtrl.text.trim();
 
     if (_isEditing) {
-      final existing =
-          ref.read(contactsProvider.notifier).findById(widget.contactId!);
+      final existing = ref
+          .read(contactsProvider.notifier)
+          .findById(widget.contactId!);
       if (existing != null) {
-        await ref.read(contactsProvider.notifier).update(
+        await ref
+            .read(contactsProvider.notifier)
+            .update(
               existing.copyWith(
                 alias: alias,
                 onionAddress: onion,
                 sharedSecret: secret,
+                availability: availability,
               ),
             );
       }
     } else {
-      await ref.read(contactsProvider.notifier).add(
+      await ref
+          .read(contactsProvider.notifier)
+          .add(
             alias: alias,
             onionAddress: onion,
             sharedSecret: secret,
+            availability: availability,
           );
     }
 
@@ -93,25 +126,22 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
   Future<void> _confirmDelete() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(S.of(context).deleteContact),
-        content: Text(
-          S.of(context).deleteContactConfirm(_aliasCtrl.text),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(S.of(context).cancel),
+      builder:
+          (ctx) => AlertDialog(
+            title: Text(S.of(context).deleteContact),
+            content: Text(S.of(context).deleteContactConfirm(_aliasCtrl.text)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(S.of(context).cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: FilledButton.styleFrom(backgroundColor: AppColors.coral),
+                child: Text(S.of(context).delete),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.coral,
-            ),
-            child: Text(S.of(context).delete),
-          ),
-        ],
-      ),
     );
     if (confirmed == true) {
       await ref.read(contactsProvider.notifier).delete(widget.contactId!);
@@ -126,7 +156,9 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? S.of(context).editContact : S.of(context).newContact),
+        title: Text(
+          _isEditing ? S.of(context).editContact : S.of(context).newContact,
+        ),
         actions: [
           if (_isEditing)
             IconButton(
@@ -175,8 +207,7 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
                         icon: const Icon(Icons.paste, size: 20),
                         tooltip: S.of(context).paste,
                         onPressed: () async {
-                          final data =
-                              await Clipboard.getData('text/plain');
+                          final data = await Clipboard.getData('text/plain');
                           if (data?.text != null) {
                             _onionCtrl.text = _sanitiseOnion(data!.text!);
                           }
@@ -186,10 +217,11 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
                         icon: const Icon(Icons.qr_code_scanner, size: 20),
                         tooltip: S.of(context).scanQr,
                         onPressed: () async {
-                          final result =
-                              await context.push<String>('/qr-scanner');
+                          final result = await context.push<String>(
+                            '/qr-scanner',
+                          );
                           if (result != null && result.isNotEmpty) {
-                            _onionCtrl.text = _sanitiseOnion(result);
+                            _handleQrResult(result);
                           }
                         },
                       ),
@@ -220,32 +252,46 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
                   prefixIcon: const Icon(Icons.key),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _showSecret
-                          ? Icons.visibility_off
-                          : Icons.visibility,
+                      _showSecret ? Icons.visibility_off : Icons.visibility,
                       size: 20,
                     ),
-                    onPressed: () =>
-                        setState(() => _showSecret = !_showSecret),
+                    onPressed: () => setState(() => _showSecret = !_showSecret),
                   ),
                 ),
                 obscureText: !_showSecret,
                 autocorrect: false,
               ),
+              const SizedBox(height: 20),
+
+              // ── Availability ─────────────────────
+              TextFormField(
+                controller: _availabilityCtrl,
+                decoration: InputDecoration(
+                  labelText: S.of(context).availability,
+                  hintText: S.of(context).availabilityHint,
+                  prefixIcon: const Icon(Icons.event_available),
+                ),
+                textCapitalization: TextCapitalization.sentences,
+              ),
               const SizedBox(height: 12),
 
               // Help text
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: cs.primaryContainer.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline,
-                        size: 18, color: cs.onPrimaryContainer),
+                    Icon(
+                      Icons.info_outline,
+                      size: 18,
+                      color: cs.onPrimaryContainer,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -264,7 +310,11 @@ class _ContactEditScreenState extends ConsumerState<ContactEditScreen> {
               FilledButton.icon(
                 onPressed: _save,
                 icon: Icon(_isEditing ? Icons.save : Icons.person_add),
-                label: Text(_isEditing ? S.of(context).save : S.of(context).addContactButton),
+                label: Text(
+                  _isEditing
+                      ? S.of(context).save
+                      : S.of(context).addContactButton,
+                ),
               ),
             ],
           ),
