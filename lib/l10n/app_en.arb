@@ -198,7 +198,7 @@
   "pttSound": "PTT Sound",
   "noSound": "No sound",
   "info": "Info",
-  "versionInfo": "v2.1.2 — Encrypted PTT communication over Tor",
+  "versionInfo": "v3.0.2 — Encrypted PTT communication over Tor",
   "sourceCode": "Source code",
   "openSourceLicense": "Open source license",
 
