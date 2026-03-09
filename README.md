@@ -7,12 +7,13 @@
 ### Who is it for?
 
 * **Journalists & activists** operating under censorship or surveillance regimes
+* **Users in censored countries** where mainstream messaging apps are blocked (via Snowflake Bridge)
+* **NGOs & human rights organizations** coordinating fieldwork in hostile environments
 * **Lawyers & healthcare professionals** handling privileged or sensitive communications
 * **Security researchers** studying anonymous communication protocols
-* **NGOs & human rights organizations** coordinating fieldwork in hostile environments
 * **Whistleblowers** who need untraceable voice channels with no account trail
 * **Privacy enthusiasts** who refuse to trust centralized infrastructure with their metadata
-* **Users in censored countries** where mainstream messaging apps are blocked (via Snowflake Bridge)
+* **Travelers & Digital Nomads** on limited data plans (e.g., international eSIMs) who can get **~57 hours of talk time per GB** (~18MB/hour).
 
 ---
 
