@@ -26,7 +26,8 @@
   * **HMAC-SHA256:** Message authentication with anti-replay nonce.
 * **Anti-Censorship:** Native **Snowflake Bridge** integration to connect even where Tor is blocked.
 * **Cross-Platform:** Native Android/iOS app and self-hosted Web version for LAN use.
-* **Privacy-by-Design:** Built-in voice changer and instant Onion address rotation.
+* **Privacy-by-Design:** Built-in **Voice Processor** (voice changer) and instant Onion address rotation.
+* **Circuit Visualization:** Real-time monitoring of Tor relay paths.
 
 ---
 
@@ -34,36 +35,41 @@
 
 OnionTalkie turns your device into a Tor server.
 
-1. **Mobile Version:** The Tor binary is embedded directly in the app — no Orbot or external dependencies required.
-2. **Web/LAN Version:** A local Dart server manages the SOCKS5 proxy, allowing any browser on your home network to join the conversation securely.
+### 📱 Native Mobile Architecture
+The Tor binary is embedded directly in the app. The UI communicates with the local Tor daemon via a SOCKS5 proxy.
 
+```mermaid
+graph TD
+    UI[Flutter UI] --> CP[Call Provider / Riverpod]
+    CP --> CS[Connection Service Native]
+    CS --> ST[SOCKS5 Tunnel]
+    ST --> ET[Embedded Tor Daemon]
+    ET --> TN((Tor Network))
+    AC[Audio / Voice Processor] --> CP
 ```
-┌──────────────────────────────────────────────────────┐
-│                    LOCAL NETWORK (LAN)                │
-│                                                      │
-│  ┌──────────┐   ┌──────────┐   ┌──────────────────┐ │
-│  │  Phone   │   │  Laptop  │   │   Desktop PC     │ │
-│  │ (browser)│   │ (browser)│   │   (browser)      │ │
-│  └────┬─────┘   └────┬─────┘   └────────┬─────────┘ │
-│       │              │                   │           │
-│       └──────────────┼───────────────────┘           │
-│                      │ HTTP + WebSocket              │
-│              ┌───────▼────────┐                      │
-│              │  Local Server  │                      │
-│              │  (Dart/shelf)  │                      │
-│              │   port 8080    │                      │
-│              └───────┬────────┘                      │
-│                      │ SOCKS5                        │
-│              ┌───────▼────────┐                      │
-│              │      Tor       │                      │
-│              │  (localhost)   │                      │
-│              └───────┬────────┘                      │
-└──────────────────────┼───────────────────────────────┘
-                       │
-                  ─────▼─────
-                 ( Tor Network)
-                 (   .onion   )
-                  ───────────
+
+### 💻 Web / Relay Architecture
+A local Dart server manages the SOCKS5 proxy, allowing any browser on your home network to join.
+
+```mermaid
+graph TD
+    subgraph LAN
+        B1[Phone Browser]
+        B2[Laptop Browser]
+    end
+    LAN -- HTTP/WS --> DS[Local Dart Server]
+    DS -- SOCKS5 --> T[Tor Daemon]
+    T --> TN((Tor Network))
+```
+
+### 📡 Connection Flow (Native-to-Native)
+Peers connect through the Tor network using SOCKS5 handshakes to establish a TCP-like stream over .onion addresses.
+
+```mermaid
+graph LR
+    A[Peer A - Native] -- SOCKS5 --> TA[Tor Relay A]
+    TA -- .onion circuit --> TB[Tor Relay B]
+    TB -- Incoming --> B[Peer B - Native]
 ```
 
 ---
@@ -75,6 +81,13 @@ OnionTalkie turns your device into a Tor server.
 1. Download the latest APK from the [Releases](../../releases) page.
 2. On first launch, the app will automatically configure your `.onion` address.
 3. Share the QR Code with a friend and start talking.
+
+### 🍎 iOS
+
+1. Download the latest `.ipa` file from the [Releases](../../releases) page.
+2. To install on non-jailbroken devices, we recommend using **[SideStore](https://docs.sidestore.io/docs/installation/prerequisites)**.
+3. Follow the **[SideStore Installation Guide](https://docs.sidestore.io/docs/installation/prerequisites)** to set it up.
+4. Once SideStore is ready, open the `.ipa` and install it.
 
 ### 💻 Web / Self-Hosted (Recommended for Desktop)
 
@@ -93,158 +106,60 @@ chmod +x start.sh
 ./start.sh
 ```
 
-The script will build the web app, start Tor, and launch the local server. Access the interface at `http://localhost:8080` or via LAN from any device.
-
-<details>
-<summary>Advanced Options</summary>
-
-```bash
-# Custom port
-PORT=9090 ./start.sh
-
-# Manual launch (without script)
-flutter build web --release
-cd server && dart pub get
-dart run bin/server.dart --port 8080 --host 0.0.0.0
-
-# Tor already running separately
-dart run bin/server.dart --no-tor
-
-# All parameters
-dart run bin/server.dart --help
-```
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `--port`, `-p` | `8080` | HTTP server port |
-| `--host`, `-H` | `0.0.0.0` | Bind address (0.0.0.0 = LAN accessible) |
-| `--web-dir`, `-w` | `../build/web` | Path to Flutter web build output |
-| `--tor-socks` | `127.0.0.1:9050` | Tor SOCKS5 proxy address |
-| `--tor-data` | `./tor_data` | Tor data directory |
-| `--no-tor` | `false` | Don't auto-start Tor |
-
-</details>
-
 ---
 
 ## 🔒 Security & Encryption
 
 ### Key Exchange (PAKE)
-
-Unlike traditional systems, OnionTalkie uses **SPAKE2** (RFC 9382 on P-256). You agree on a simple passphrase with your contact (in person, via a secure app, etc.). The algorithm derives a robust session key without ever sending the password over the network, protecting you from brute-force attacks and ensuring every call has a unique key.
+OnionTalkie uses **SPAKE2** (RFC 9382 on P-256). You agree on a passphrase with your contact. The algorithm derives a robust session key without ever sending the password over the network.
 
 ### Cipher Selection
-
-You can negotiate the cipher for each session:
-
 | Family | Variants | Notes |
 |--------|----------|-------|
-| **AES** | 128/192/256-bit in CBC, CTR, CFB, OFB | Standard performance |
-| **ChaCha20** | ChaCha20-Poly1305 (AEAD), ChaCha20 | Ideal for mobile devices |
-| **Camellia** | 128/192/256-bit in CBC, CTR | Alternative security standard |
-| **ARIA** | 128/192/256-bit in CBC, CTR | Korean standard cipher |
-
-### Additional Security Features
-
-* **HMAC-SHA256** message authentication with anti-replay nonce
-* **At-rest secret protection** — optional passphrase to encrypt the shared secret on disk (AES-256-CBC, 100k PBKDF2 iterations)
-* **Node exclusion** — Five/Nine/Fourteen Eyes presets to exclude relays from specific countries
-* **Circuit visualization** — view the Tor circuit path in real-time
+| **AES** | 128/192/256-bit | Industry standard |
+| **ChaCha20** | ChaCha20-Poly1305, ChaCha20 | Optimized for mobile |
+| **Camellia** | 128/192/256-bit | Japanese standard |
+| **ARIA** | 128/192/256-bit | Korean standard |
 
 ---
 
 ## 📡 Protocol
 
-Line-based text protocol over TCP (native) / WebSocket (web):
+OnionTalkie uses a line-based text protocol. Once a session key is derived, messages can be wrapped in **HMAC-SHA256**.
 
-| Message | Direction | Description |
-|---------|-----------|-------------|
-| `SPAKE2_PUB:<base64>` | ↔ | SPAKE2 blinded public key |
-| `SPAKE2_CONFIRM:<hex>` | ↔ | SPAKE2 HMAC confirmation |
-| `ID:<onion>` | → | Identification |
-| `CIPHER:<name>` | ↔ | Cipher negotiation |
-| `PTT_START` | → | Recording started |
-| `PTT_STOP` | → | Recording ended |
-| `AUDIO:<base64>` | ↔ | Encrypted audio data |
-| `MSG:<base64>` | ↔ | Encrypted chat message |
-| `HANGUP` | ↔ | End call |
-| `PING` | ↔ | Keep-alive |
+| Message | Description |
+|---------|-------------|
+| `ID:<onion>` | Local identity exchange |
+| `CIPHER:<name>` | Cipher negotiation |
+| `SPAKE2_PUB:<b64>` | PAKE public value exchange |
+| `SPAKE2_CONFIRM:<hex>`| Key verification |
+| `HMAC:<n>:<h>:<m>` | Authenticated message wrapper |
+| `PTT_START/STOP` | Push-to-Talk signals |
+| `AUDIO:<base64>` | Encrypted audio chunks (IMA ADPCM) |
+| `MSG:<base64>` | Encrypted text chat |
 
-<details>
-<summary>SPAKE2 Call Flow Diagram</summary>
-
-```
-Initiator                           Responder
-    │                                    │
-    │──── ID:<onion> ───────────────────▶│  Identification
-    │──── CIPHER:<name> ────────────────▶│  Cipher negotiation
-    │◀─── ID:<onion> ───────────────────│  Responder identification
-    │◀─── CIPHER:<name> ────────────────│  Responder cipher
-    │                                    │
-    │  ✓ Responder loads SECRET          │
-    │                                    │
-    │──── SPAKE2_PUB:<base64> ──────────▶│  Blinded public key exchange
-    │◀─── SPAKE2_PUB:<base64> ──────────│  Responder replies
-    │◀─── SPAKE2_CONFIRM:<hex> ─────────│  Responder confirms
-    │──── SPAKE2_CONFIRM:<hex> ─────────▶│  Initiator confirms
-    │                                    │
-    │  ✓ Session key derived             │  ✓ Session key derived
-    │                                    │
-    │  ══════ Call Active ══════         │
-    │  (HMAC enabled after handshake)    │
-    │                                    │
-    │──── PTT_START ────────────────────▶│
-    │──── AUDIO:<base64> ───────────────▶│  Audio encrypted with SPAKE2 key
-    │──── PTT_STOP ─────────────────────▶│
-    │                                    │
-```
-
-</details>
-
----
-
-## 👨‍💻 Development & Build
-
-### Requirements
-
-* Flutter SDK >= 3.22.0
-* Dart SDK >= 3.4.0
-* Tor binary (for desktop/web builds)
-
-### Android Build
-
-Download the native Tor binaries before compiling:
-
-```bash
-# Download latest stable Tor binaries (auto-detected)
-bash scripts/fetch_tor_android.sh
-
-# Debug build
-flutter build apk --debug
-
-# Release build
-flutter build apk --release
-
-# Split by architecture (smaller APKs)
-flutter build apk --split-per-abi --release
-```
-
-### iOS Build
-
-```bash
-# Debug (simulator only)
-flutter build ios --debug --simulator
-
-# Release (unsigned archive)
-flutter build ipa --release --no-codesign
-```
-
-> For sideloading without the App Store, use SideStore, AltStore, Sideloadly, or an ad-hoc/enterprise certificate.
-
-### Web Build
-
-```bash
-flutter build web --release
+### Handshake Sequence
+```mermaid
+sequenceDiagram
+    participant A as Initiator
+    participant B as Responder
+    
+    A->>B: ID:initiator.onion
+    A->>B: CIPHER:aes-256-cbc
+    B->>A: ID:responder.onion
+    B->>A: CIPHER:aes-256-cbc
+    
+    Note over A,B: SPAKE2 Handshake
+    A->>B: SPAKE2_PUB: <public_A>
+    B->>A: SPAKE2_PUB: <public_B>
+    B->>A: SPAKE2_CONFIRM: <mac_B>
+    A->>B: SPAKE2_CONFIRM: <mac_A>
+    
+    Note over A,B: Session Key Derived (HMAC Enabled)
+    
+    A->>B: HMAC:PTT_START
+    A->>B: HMAC:AUDIO:<data>
+    A->>B: HMAC:PTT_STOP
 ```
 
 ---
@@ -253,23 +168,13 @@ flutter build web --release
 
 ```
 ├── lib/
-│   ├── main.dart                        # Entry point
-│   ├── app.dart                         # MaterialApp.router
-│   ├── core/
-│   │   ├── constants/app_constants.dart # Constants, ciphers, protocol
-│   │   ├── router/app_router.dart       # GoRouter config
-│   │   └── theme/app_theme.dart         # Material 3 theme
-│   ├── models/                          # Data classes (CallState, TorStatus, etc.)
-│   ├── providers/                       # Riverpod state management
-│   ├── screens/                         # UI screens
-│   ├── services/                        # Platform services (audio, connection, tor, encryption)
-│   └── widgets/                         # Reusable UI components
-├── scripts/
-│   └── fetch_tor_android.sh             # Download Tor binaries for Android
-├── server/
-│   ├── bin/server.dart                  # Local relay server (Tor bridge)
-│   └── pubspec.yaml                     # Server dependencies
-├── start.sh                             # Quick start script
+│   ├── core/           # Constants, router, theme
+│   ├── providers/      # Riverpod state management (Call, Tor, Contacts)
+│   ├── services/       # Platform logic (Audio, Encryption, SPAKE2, Tor)
+│   ├── models/         # Data structures
+│   └── screens/        # UI Layers
+├── scripts/            # Build & Fetch scripts
+├── server/             # Dart/Shelf Relay Server
 └── README.md
 ```
 
@@ -277,21 +182,11 @@ flutter build web --release
 
 ## 🤝 Credits & Inspiration
 
-OnionTalkie draws inspiration and foundational concepts from:
-
-* **[TerminalPhone](https://gitlab.com/here_forawhile/terminalphone):** Special thanks to the TerminalPhone developers for their pioneering approach to voice communication over the Tor network. Many of the circuit management and PTT protocol patterns are derived from their excellent open-source implementation.
-* **[The Tor Project](https://www.torproject.org/):** For providing the anonymity infrastructure on which this project is built.
+* **[TerminalPhone](https://gitlab.com/here_forawhile/terminalphone):** Foundation for circuit management and PTT protocol.
+* **[The Tor Project](https://www.torproject.org/):** Anonymity infrastructure.
 
 ---
 
 ## ⚖️ License
 
 Distributed under the MIT License. See the `LICENSE` file for details.
-
-> **Disclaimer:** This software is provided "as is", for educational and privacy-protection purposes. The developers are not responsible for any improper or illegal use of this tool.
-
----
-
-**Want to contribute?** Pull Requests are welcome! If you find a bug or have a suggestion to improve the cryptography, please open an Issue.
-
-**Like the project?** Leave a ⭐ on GitHub!
