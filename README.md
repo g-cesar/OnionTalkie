@@ -2,6 +2,10 @@
 
 **Encrypted End-to-End Voice Communications over the Tor Network.**
 
+<p align="center">
+  <video src="assets/video/demo.mov" autoplay loop muted playsinline width="100%"></video>
+</p>
+
 **OnionTalkie** is a **Push-to-Talk (PTT)** voice communication platform designed for maximum privacy. It uses no central servers, no phone numbers, and no accounts. Each user is identified solely by their locally generated `.onion` address.
 
 ### Who is it for?
