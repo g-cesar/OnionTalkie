@@ -184,7 +184,7 @@
   "pttSound": "按键提示音",
   "noSound": "静音",
   "info": "关于",
-  "versionInfo": "v3.0.2 — 基于 Tor 的加密通讯",
+  "versionInfo": "v3.0.3 — 基于 Tor 的加密通讯",
   "sourceCode": "源代码",
   "openSourceLicense": "开源许可证",
   "securityTitle": "安全选项",

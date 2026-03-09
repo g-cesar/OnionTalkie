@@ -184,7 +184,7 @@
   "pttSound": "Sonido PTT",
   "noSound": "Sin sonido",
   "info": "Información",
-  "versionInfo": "v3.0.2 — Comunicación PTT cifrada sobre Tor",
+  "versionInfo": "v3.0.3 — Comunicación PTT cifrada sobre Tor",
   "sourceCode": "Código fuente",
   "openSourceLicense": "Licencia de código abierto",
   "securityTitle": "Seguridad",
