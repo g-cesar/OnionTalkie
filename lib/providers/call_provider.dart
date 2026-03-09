@@ -47,6 +47,16 @@ class CallNotifier extends StateNotifier<CallState> {
   /// [_handleAudioChunkReceived] so early chunks are not lost.
   Completer<void>? _streamingReady;
 
+  /// Flag to prevent race conditions during audio init
+  bool _isStartingRecording = false;
+
+  /// Flag tracking physical connection to PTT button
+  bool _pttButtonHeld = false;
+
+  /// Queue for processing incoming messages sequentially
+  final List<MapEntry<String, String>> _messageQueue = [];
+  bool _isProcessingMessage = false;
+
   CallNotifier(
     this._connectionService,
     this._audioService,
@@ -235,13 +245,32 @@ class CallNotifier extends StateNotifier<CallState> {
   /// Set up the message handler for incoming protocol messages.
   void _setupMessageHandler() {
     _messageSubscription?.cancel();
+    // Listen to messages using a sequential processing queue
+    // to avoid synchronous commands (like PTT_STOP) outrunning
+    // asynchronous ones (like AUDIO decryption).
     _messageSubscription = _connectionService.messageStream.listen((entry) {
-      _handleMessage(entry.key, entry.value);
+      _messageQueue.add(entry);
+      _processNextMessage();
     });
   }
 
-  /// Handle incoming protocol messages.
-  void _handleMessage(String type, String data) {
+  /// Sequentially process the message queue.
+  Future<void> _processNextMessage() async {
+    if (_isProcessingMessage || _messageQueue.isEmpty) return;
+    _isProcessingMessage = true;
+
+    try {
+      final entry = _messageQueue.removeAt(0);
+      await _handleMessage(entry.key, entry.value);
+    } finally {
+      _isProcessingMessage = false;
+      // Loop to process the next message if any.
+      _processNextMessage();
+    }
+  }
+
+  /// Handle incoming protocol messages sequentially.
+  Future<void> _handleMessage(String type, String data) async {
     switch (type) {
       case 'SPAKE2_PUB':
         _handleSpake2Pub(data);
@@ -294,7 +323,7 @@ class CallNotifier extends StateNotifier<CallState> {
         break;
 
       case 'AUDIO':
-        _handleAudioChunkReceived(data);
+        await _handleAudioChunkReceived(data);
         break;
 
       case 'MSG':
@@ -608,10 +637,26 @@ class CallNotifier extends StateNotifier<CallState> {
       return;
     }
 
+    // Mark that the user is holding the button
+    _pttButtonHeld = true;
+
+    // Prevent re-entrant startup
+    if (state.isRecording || _isStartingRecording) return;
+
+    _isStartingRecording = true;
+
     try {
       // Play PTT chime before recording
       final settings = _ref.read(settingsProvider);
       await _playPttChime(settings);
+
+      // CRITICAL: If the user released the button while the chime was playing, abort
+      if (!_pttButtonHeld) {
+        debugPrint(
+          'CallNotifier: Button released during startup, aborting recording.',
+        );
+        return;
+      }
 
       await _audioService.startRecording();
       state = state.copyWith(isRecording: true);
@@ -623,6 +668,8 @@ class CallNotifier extends StateNotifier<CallState> {
       });
     } catch (e) {
       debugPrint('CallNotifier: Failed to start recording: $e');
+    } finally {
+      _isStartingRecording = false;
     }
   }
 
@@ -663,13 +710,16 @@ class CallNotifier extends StateNotifier<CallState> {
 
   /// Stop PTT recording and finalise the transmission.
   Future<void> stopRecording() async {
+    // Mark that the user released the button
+    _pttButtonHeld = false;
+
+    // Stop subscribing to audio chunks (do this FIRST strictly, to avoid leaks on aborted starts).
+    await _audioChunkSub?.cancel();
+    _audioChunkSub = null;
+
     if (!state.isRecording) return;
 
     try {
-      // Stop subscribing to audio chunks.
-      await _audioChunkSub?.cancel();
-      _audioChunkSub = null;
-
       await _audioService.stopRecording();
       state = state.copyWith(isRecording: false);
       _connectionService.sendPttStop();

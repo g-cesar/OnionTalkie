@@ -31,6 +31,7 @@ class _PttButtonState extends State<PttButton> {
 
   void _onPointerDown(PointerDownEvent event) {
     if (!widget.enabled) return;
+    if (_isPressed) return; // Prevent multiple concurrent presses
     setState(() => _isPressed = true);
     HapticFeedback.mediumImpact();
     widget.onPttStart();
@@ -58,9 +59,10 @@ class _PttButtonState extends State<PttButton> {
         duration: const Duration(milliseconds: 200),
         height: 72,
         decoration: BoxDecoration(
-          color: !enabled
-              ? theme.colorScheme.surfaceContainerHighest
-              : recording
+          color:
+              !enabled
+                  ? theme.colorScheme.surfaceContainerHighest
+                  : recording
                   ? AppColors.coral
                   : theme.colorScheme.primary,
           borderRadius: BorderRadius.circular(36),
@@ -69,8 +71,8 @@ class _PttButtonState extends State<PttButton> {
               color: (!enabled
                       ? Colors.grey
                       : recording
-                          ? AppColors.coral
-                          : theme.colorScheme.primary)
+                      ? AppColors.coral
+                      : theme.colorScheme.primary)
                   .withValues(alpha: recording ? 0.4 : 0.2),
               blurRadius: recording ? 20 : 8,
               spreadRadius: recording ? 2 : 0,
@@ -85,11 +87,12 @@ class _PttButtonState extends State<PttButton> {
                 !enabled
                     ? Icons.mic_off
                     : recording
-                        ? Icons.mic
-                        : Icons.mic_none,
-                color: !enabled
-                    ? theme.colorScheme.onSurfaceVariant
-                    : Colors.white,
+                    ? Icons.mic
+                    : Icons.mic_none,
+                color:
+                    !enabled
+                        ? theme.colorScheme.onSurfaceVariant
+                        : Colors.white,
                 size: 28,
               ),
               const SizedBox(width: 8),
@@ -97,12 +100,13 @@ class _PttButtonState extends State<PttButton> {
                 !enabled
                     ? S.of(context).otherIsSpeaking
                     : recording
-                        ? S.of(context).transmitting
-                        : S.of(context).holdToTalk,
+                    ? S.of(context).transmitting
+                    : S.of(context).holdToTalk,
                 style: theme.textTheme.labelLarge?.copyWith(
-                  color: !enabled
-                      ? theme.colorScheme.onSurfaceVariant
-                      : Colors.white,
+                  color:
+                      !enabled
+                          ? theme.colorScheme.onSurfaceVariant
+                          : Colors.white,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.2,
                 ),
